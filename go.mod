@@ -1,1 +1,1 @@
-module "go645"
+module "github.com/zcx1218029121/go645"
