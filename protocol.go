@@ -33,16 +33,16 @@ type InformationElement interface {
 
 type Address struct {
 	value    []byte
-	strValue string
+	StrValue string
 }
 
 func NewAddress(address string) *Address {
 	value := Number2bcd(address)
-	return &Address{value: value, strValue: address}
+	return &Address{value: value, StrValue: address}
 }
 
 func (a *Address) getString() string {
-	return a.strValue
+	return a.StrValue
 }
 
 func (a Address) Encode(buffer *bytes.Buffer) error {
@@ -246,7 +246,7 @@ func DecodeAddress(buffer *bytes.Buffer, size int) *Address {
 	value := make([]byte, size)
 	_ = binary.Read(buffer, binary.LittleEndian, &value)
 	a.value = value
-	a.strValue = Bcd2Number(a.value)
+	a.StrValue = Bcd2Number(a.value)
 	return a
 }
 func DecodeData(buffer *bytes.Buffer, size byte) *Data {

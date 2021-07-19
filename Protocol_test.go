@@ -14,7 +14,7 @@ func TestDecode(t *testing.T) {
 		return
 	}
 	p := Decode(bytes.NewBuffer(decodeString))
-	if p.Address.strValue != "140100318221" {
+	if p.Address.StrValue != "140100318221" {
 		t.Errorf("地址解析错误")
 	}
 	if !p.Control.IsState(IsSlave) || !p.Control.IsState(Read) {
@@ -25,7 +25,6 @@ func TestDecode(t *testing.T) {
 	if p.Data.dataType != [4]byte{0, 1, 0, 0} {
 		t.Errorf("数据项解析错误")
 	}
-
 
 }
 
@@ -43,8 +42,7 @@ func TestRead(t *testing.T) {
 	p2 := Decode(bytes.NewBuffer(decodeString))
 	p := Decode(bf)
 
-
-	if !p.Control.IsState(Read)  {
+	if !p.Control.IsState(Read) {
 		t.Errorf("状态解析错误")
 	}
 
@@ -67,7 +65,7 @@ func TestSend(t *testing.T) {
 	p := Decode(bf)
 	decodeString, _ := hex.DecodeString(str)
 	p2 := Decode(bytes.NewBuffer(decodeString))
-	if p2.Address.strValue != p.Address.strValue {
+	if p2.Address.StrValue != p.Address.StrValue {
 		t.Errorf("地址错误")
 	}
 	if p.CS != p2.CS {
