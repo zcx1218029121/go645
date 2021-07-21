@@ -186,14 +186,21 @@ func ReadResponse(address *Address, itemCode int32, control *Control, rawValue s
 
 type Protocol struct {
 	//Start 645协议起始符号
-	Start      byte
-	Address    *Address
-	Start2     byte
-	Control    *Control
+	Start byte
+	//设备地址 6个字节的BCD
+	Address *Address
+	//Start  645协议起始符号 标志报文头结束
+	Start2 byte
+	//Control 控制域
+	Control *Control
+	//Control 数据长度
 	DataLength byte
-	Data       *Data
-	CS         byte
-	End        byte
+	//Control 数据抽象
+	Data *Data
+	//CS 校验和
+	CS byte
+	//End 0x16
+	End byte
 }
 
 func (p Protocol) Encode(buffer *bytes.Buffer) error {
