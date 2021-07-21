@@ -10,15 +10,18 @@ import (
 )
 
 type ByteSlice []byte
+type Order bool
 
 func (x ByteSlice) Len() int           { return len(x) }
 func (x ByteSlice) Less(i, j int) bool { return x[i] < x[j] }
 func (x ByteSlice) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 
 const (
-	Start   = 0x68
-	End     = 0x16
-	HeadLen = 1 + 6 + 1
+	LittleEndian Order = false
+	BigEndian    Order = true
+	Start              = 0x68
+	End                = 0x16
+	HeadLen            = 1 + 6 + 1
 )
 
 var _ InformationElement = (*Address)(nil)
@@ -37,16 +40,18 @@ type Address struct {
 	StrValue string
 }
 
-func NewAddress(address string) *Address {
+func NewAddress(address string, order Order) *Address {
 	value := Number2bcd(address)
-	//反转
-	for i, j := 0, len(value)-1; i < j; i, j = i+1, j-1 {
-		value[i], value[j] = value[j], value[i]
+	if !order {
+		for i, j := 0, len(value)-1; i < j; i, j = i+1, j-1 {
+			value[i], value[j] = value[j], value[i]
+		}
 	}
+
 	return &Address{value: value, StrValue: address}
 }
 
-func (a *Address) getString() string {
+func (a *Address) GetString() string {
 	return a.StrValue
 }
 
@@ -144,7 +149,7 @@ func ReadRequest(address string, itemCode int32, control *Control) *Protocol {
 		Start:      Start,
 		Start2:     Start,
 		End:        End,
-		Address:    NewAddress(address),
+		Address:    NewAddress(address, LittleEndian),
 		Control:    control,
 		DataLength: 0x04,
 		Data:       NewData(itemCode, ""),
@@ -164,7 +169,7 @@ func ReadResponse(address string, itemCode int32, control *Control, rawValue str
 		Start:      Start,
 		Start2:     Start,
 		End:        End,
-		Address:    NewAddress(address),
+		Address:    NewAddress(address, LittleEndian),
 		Control:    control,
 		DataLength: 0x04,
 		Data:       NewData(itemCode, rawValue),
@@ -256,7 +261,7 @@ func Decode(buffer *bytes.Buffer) *Protocol {
 
 	p := new(Protocol)
 	_ = binary.Read(buffer, binary.LittleEndian, &p.Start)
-	p.Address = DecodeAddress(buffer, 6)
+	p.Address = DecodeAddress(buffer, 6, LittleEndian)
 	_ = binary.Read(buffer, binary.LittleEndian, &p.Start2)
 	p.Control = DecodeControl(buffer)
 	_ = binary.Read(buffer, binary.LittleEndian, &p.DataLength)
@@ -265,12 +270,21 @@ func Decode(buffer *bytes.Buffer) *Protocol {
 	_ = binary.Read(buffer, binary.LittleEndian, &p.End)
 	return p
 }
-func DecodeAddress(buffer *bytes.Buffer, size int) *Address {
+func DecodeAddress(buffer *bytes.Buffer, size int, order Order) *Address {
 	a := new(Address)
 	value := make([]byte, size)
 	_ = binary.Read(buffer, binary.LittleEndian, &value)
-	a.value = value
-	a.StrValue = Bcd2Number(a.value)
+
+	if !order {
+		for i, j := 0, len(value)-1; i < j; i, j = i+1, j-1 {
+			value[i], value[j] = value[j], value[i]
+		}
+		a.value = value
+		a.StrValue = Bcd2Number(a.value)
+	} else {
+		a.value = value
+		a.StrValue = Bcd2Number(a.value)
+	}
 	return a
 }
 func DecodeData(buffer *bytes.Buffer, size byte) *Data {
