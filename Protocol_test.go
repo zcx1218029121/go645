@@ -34,7 +34,7 @@ func TestRead(t *testing.T) {
 	data := make([]byte, 0)
 	c := NewControl()
 	c.SetState(Read)
-	r := ReadRequest("610100000000", 0x00_01_00_00, c)
+	r := ReadRequest(NewAddress("610100000000", BigEndian), 0x00_01_00_00, c)
 	bf := bytes.NewBuffer(data)
 	_ = r.Encode(bf)
 
@@ -59,7 +59,7 @@ func TestSend(t *testing.T) {
 	data := make([]byte, 0)
 	c := NewControl()
 	c.SetState(Read)
-	r := ReadRequest("610100000000", 0x00_01_00_00, c)
+	r := ReadRequest(NewAddress("610100000000", BigEndian), 0x00_01_00_00, c)
 	bf := bytes.NewBuffer(data)
 	_ = r.Encode(bf)
 	p := Decode(bf)
@@ -71,5 +71,22 @@ func TestSend(t *testing.T) {
 	if p.CS != p2.CS {
 		t.Errorf("校验码错误")
 	}
-	print(GetHex(ReadRequest("218231000988", 0x00_01_00_00, c)))
+}
+func TestLEnd(t *testing.T) {
+	str := "68610100000000681104333334331416"
+	data := make([]byte, 0)
+	c := NewControl()
+	c.SetState(Read)
+	r := ReadRequest(NewAddress("610100000000", LittleEndian), 0x00_01_00_00, c)
+	bf := bytes.NewBuffer(data)
+	_ = r.Encode(bf)
+	p := Decode(bf)
+	decodeString, _ := hex.DecodeString(str)
+	p2 := Decode(bytes.NewBuffer(decodeString))
+	if p.Address.StrValue != "000000000161" {
+		t.Errorf("地址错误")
+	}
+	if p.CS != p2.CS {
+		t.Errorf("校验码错误")
+	}
 }

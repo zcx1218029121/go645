@@ -40,6 +40,12 @@ type Address struct {
 	StrValue string
 }
 
+// NewAddress ，构建设备地址
+// 参数：
+//      address ： 设备地址
+//      order ： 大小端表示
+// 返回值：
+//      *Address 设备地址
 func NewAddress(address string, order Order) *Address {
 	value := Number2bcd(address)
 	if !order {
@@ -51,10 +57,11 @@ func NewAddress(address string, order Order) *Address {
 	return &Address{value: value, StrValue: address}
 }
 
-func (a *Address) GetString() string {
-	return a.StrValue
-}
-
+// Encode ，协议解码
+// 参数：
+//      buffer ： 字节码缓冲
+// 返回值：
+//      error 解码异常
 func (a Address) Encode(buffer *bytes.Buffer) error {
 	return binary.Write(buffer, binary.BigEndian, a.value)
 }
@@ -144,12 +151,12 @@ func NewData(dataType int32, value string) *Data {
 }
 
 //ReadRequest 读数据
-func ReadRequest(address string, itemCode int32, control *Control) *Protocol {
+func ReadRequest(address *Address, itemCode int32, control *Control) *Protocol {
 	return &Protocol{
 		Start:      Start,
 		Start2:     Start,
 		End:        End,
-		Address:    NewAddress(address, LittleEndian),
+		Address:    address,
 		Control:    control,
 		DataLength: 0x04,
 		Data:       NewData(itemCode, ""),
@@ -164,12 +171,12 @@ func GetHex(protocol *Protocol) string {
 	return hex.EncodeToString(bf.Bytes())
 }
 
-func ReadResponse(address string, itemCode int32, control *Control, rawValue string) *Protocol {
+func ReadResponse(address *Address, itemCode int32, control *Control, rawValue string) *Protocol {
 	return &Protocol{
 		Start:      Start,
 		Start2:     Start,
 		End:        End,
-		Address:    NewAddress(address, LittleEndian),
+		Address:    address,
 		Control:    control,
 		DataLength: 0x04,
 		Data:       NewData(itemCode, rawValue),
@@ -275,13 +282,7 @@ func DecodeAddress(buffer *bytes.Buffer, size int, order Order) *Address {
 	value := make([]byte, size)
 	_ = binary.Read(buffer, binary.LittleEndian, &value)
 
-	if !order {
-		for i, j := 0, len(value)-1; i < j; i, j = i+1, j-1 {
-			value[i], value[j] = value[j], value[i]
-		}
-		a.value = value
-		a.StrValue = Bcd2Number(a.value)
-	} else {
+	{
 		a.value = value
 		a.StrValue = Bcd2Number(a.value)
 	}
