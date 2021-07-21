@@ -16,8 +16,9 @@ func (x ByteSlice) Less(i, j int) bool { return x[i] < x[j] }
 func (x ByteSlice) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
 
 const (
-	Start = 0x68
-	End   = 0x16
+	Start   = 0x68
+	End     = 0x16
+	HeadLen = 1 + 6 + 1
 )
 
 var _ InformationElement = (*Address)(nil)
@@ -38,6 +39,10 @@ type Address struct {
 
 func NewAddress(address string) *Address {
 	value := Number2bcd(address)
+	//反转
+	for i, j := 0, len(value)-1; i < j; i, j = i+1, j-1 {
+		value[i], value[j] = value[j], value[i]
+	}
 	return &Address{value: value, StrValue: address}
 }
 
@@ -50,7 +55,7 @@ func (a Address) Encode(buffer *bytes.Buffer) error {
 }
 
 func (a Address) getLen() uint16 {
-	return 4
+	return 6
 }
 
 type Data struct {
@@ -94,7 +99,6 @@ func (d Data) Encode(buffer *bytes.Buffer) error {
 		d.dataType[index] = b + 0x33
 	}
 	_ = binary.Write(buffer, binary.LittleEndian, d.dataType)
-
 	if d.rawValue != "" {
 		//写入数据
 		bcd := Number2bcd(d.rawValue)
@@ -109,7 +113,25 @@ func (d Data) Encode(buffer *bytes.Buffer) error {
 }
 
 func (d Data) getLen() uint16 {
-	panic("implement me")
+
+	if d.dataType[3] == 0x00 && d.dataType[0] == 0x00 {
+		return 4
+	} else if d.dataType[3] == 0x00 && d.dataType[0] == 0x01 {
+		return 4
+	} else if d.dataType[3] == 0x00 && d.dataType[0] == 0x0c {
+		return 4
+	} else if d.dataType[3] == 0x01 && d.dataType[0] == 0x00 {
+		return 8
+	} else if d.dataType[3] == 0x01 && d.dataType[0] == 0x01 {
+		return 8
+	} else if d.dataType[3] == 0x01 && d.dataType[0] == 0x0c {
+		return 8
+	} else if d.dataType[3] == 0x02 && d.dataType[0] == 0x00 && d.dataType[2] == 0x01 {
+		return 2
+	} else if d.dataType[3] == 0x02 && d.dataType[0] == 0x00 && d.dataType[2] <= 0x05 {
+		return 3
+	}
+	return 0
 }
 
 func NewData(dataType int32, value string) *Data {
@@ -161,7 +183,6 @@ type Protocol struct {
 }
 
 func (p Protocol) Encode(buffer *bytes.Buffer) error {
-	//防止别的数据对 数据长度的影响
 	//计算cs 需要重写开辟字节码缓冲区
 	tmp := make([]byte, 0)
 	bf := bytes.NewBuffer(tmp)
@@ -181,6 +202,7 @@ func (p Protocol) Encode(buffer *bytes.Buffer) error {
 	_ = binary.Write(bf, binary.LittleEndian, p.CS)
 	_ = binary.Write(bf, binary.LittleEndian, p.End)
 
+	//写入
 	_ = binary.Write(buffer, binary.LittleEndian, bf.Bytes())
 
 	return nil
@@ -188,7 +210,7 @@ func (p Protocol) Encode(buffer *bytes.Buffer) error {
 }
 
 func (p Protocol) getLen() uint16 {
-	panic("implement me")
+	return HeadLen + 4 + p.Data.getLen()
 }
 
 func Bcd2Number(bcd []byte) string {
