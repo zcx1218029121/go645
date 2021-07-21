@@ -66,14 +66,14 @@ type Data struct {
 	rawValue string
 }
 
-func (data Data) GetDataType() [4]byte {
-	return data.dataType
+func (d Data) GetDataType() [4]byte {
+	return d.dataType
 }
-func (data Data) GetDataTypeStr() string {
+func (d Data) GetDataTypeStr() string {
 	//需要翻转
 	var a = make([]byte, 4)
-	for i, j := 0, len(data.dataType)-1; i < j; i, j = i+1, j-1 {
-		a[i], a[j] = data.dataType[j], data.dataType[i]
+	for i, j := 0, len(d.dataType)-1; i < j; i, j = i+1, j-1 {
+		a[i], a[j] = d.dataType[i], d.dataType[j]
 	}
 	return hex.EncodeToString(a)
 }
@@ -151,9 +151,11 @@ func ReadRequest(address string, itemCode int32, control *Control) *Protocol {
 	}
 
 }
+
+//GetHex 返回16进制string
 func GetHex(protocol *Protocol) string {
 	bf := bytes.NewBuffer(make([]byte, 0))
-	protocol.Encode(bf)
+	_ = protocol.Encode(bf)
 	return hex.EncodeToString(bf.Bytes())
 }
 
