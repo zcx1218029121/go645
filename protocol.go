@@ -110,7 +110,9 @@ func (d Data) Encode(buffer *bytes.Buffer) error {
 	for index, b := range d.dataType {
 		d.dataType[index] = b + 0x33
 	}
-	_ = binary.Write(buffer, binary.LittleEndian, d.dataType)
+	if err := binary.Write(buffer, binary.LittleEndian, d.dataType); err != nil {
+		return err
+	}
 	if d.rawValue != "" {
 		//写入数据
 		bcd := Number2bcd(d.rawValue)
@@ -118,7 +120,9 @@ func (d Data) Encode(buffer *bytes.Buffer) error {
 		for i, j := 0, len(bcd)-1; i < j; i, j = i+1, j-1 {
 			bcd[i], bcd[j] = bcd[j], bcd[i]
 		}
-		_ = binary.Write(buffer, binary.LittleEndian, &bcd)
+		if err := binary.Write(buffer, binary.LittleEndian, &bcd); err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -171,10 +175,13 @@ func ReadRequest(address *Address, itemCode int32) *Protocol {
 }
 
 //GetHex 返回16进制string
-func GetHex(protocol *Protocol) string {
+func GetHex(protocol *Protocol) (string, error) {
+
 	bf := bytes.NewBuffer(make([]byte, 0))
-	_ = protocol.Encode(bf)
-	return hex.EncodeToString(bf.Bytes())
+	if err := protocol.Encode(bf); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(bf.Bytes()), nil
 }
 
 func ReadResponse(address *Address, itemCode int32, control *Control, rawValue string) *Protocol {
