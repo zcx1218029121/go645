@@ -9,12 +9,46 @@ import (
 	"strings"
 )
 
-type ByteSlice []byte
-type Order bool
+type (
+	//Order 地址大小端
+	Order              bool
+	InformationElement interface {
+		Encode(buffer *bytes.Buffer) error
+		getLen() byte
+	}
+	//Address 表计地址
+	Address struct {
+		value    []byte
+		StrValue string
+	}
+	//Data 数据域
+	Data struct {
+		//数据标识 4 个字节
+		dataType [4]byte
 
-func (x ByteSlice) Len() int           { return len(x) }
-func (x ByteSlice) Less(i, j int) bool { return x[i] < x[j] }
-func (x ByteSlice) Swap(i, j int)      { x[i], x[j] = x[j], x[i] }
+		//原始数据
+		rawValue string
+	}
+	//Protocol 协议
+	Protocol struct {
+		//Start 645协议起始符号
+		Start byte
+		//设备地址 6个字节的BCD
+		Address *Address
+		//Start  645协议起始符号 标志报文头结束
+		Start2 byte
+		//Control 控制域
+		Control *Control
+		//Control 数据长度
+		DataLength byte
+		//Control 数据抽象
+		Data *Data
+		//CS 校验和
+		CS byte
+		//End 0x16
+		End byte
+	}
+)
 
 const (
 	LittleEndian Order = false
@@ -24,21 +58,13 @@ const (
 	HeadLen            = 1 + 6 + 1
 )
 
-var _ InformationElement = (*Address)(nil)
+var (
+	_ InformationElement = (*Address)(nil)
 
-var _ InformationElement = (*Protocol)(nil)
+	_ InformationElement = (*Protocol)(nil)
 
-var _ InformationElement = (*Data)(nil)
-
-type InformationElement interface {
-	Encode(buffer *bytes.Buffer) error
-	getLen() byte
-}
-
-type Address struct {
-	value    []byte
-	StrValue string
-}
+	_ InformationElement = (*Data)(nil)
+)
 
 // NewAddress ，构建设备地址
 // 参数：
@@ -57,6 +83,22 @@ func NewAddress(address string, order Order) *Address {
 	return &Address{value: value, StrValue: address}
 }
 
+func NewData(dataType int32, value string) *Data {
+	return &Data{dataType: Int2bytes(dataType), rawValue: value}
+}
+
+func NewProtocol(address *Address, data *Data, control *Control) *Protocol {
+	return &Protocol{
+		Start:      Start,
+		Start2:     Start,
+		End:        End,
+		Address:    address,
+		Control:    control,
+		DataLength: data.getLen(),
+		Data:       data,
+	}
+}
+
 // Encode ，协议解码
 // 参数：
 //      buffer ： 字节码缓冲
@@ -68,14 +110,6 @@ func (a Address) Encode(buffer *bytes.Buffer) error {
 
 func (a Address) getLen() byte {
 	return 6
-}
-
-type Data struct {
-	//数据标识 4 个字节
-	dataType [4]byte
-
-	//原始数据
-	rawValue string
 }
 
 func (d Data) GetDataType() [4]byte {
@@ -149,22 +183,6 @@ func (d Data) getLen() byte {
 	return 4
 }
 
-func NewData(dataType int32, value string) *Data {
-	return &Data{dataType: Int2bytes(dataType), rawValue: value}
-}
-
-func NewProtocol(address *Address, data *Data, control *Control) *Protocol {
-	return &Protocol{
-		Start:      Start,
-		Start2:     Start,
-		End:        End,
-		Address:    address,
-		Control:    control,
-		DataLength: data.getLen(),
-		Data:       data,
-	}
-}
-
 //ReadRequest 读数据
 func ReadRequest(address *Address, itemCode int32) *Protocol {
 	c := NewControl()
@@ -197,25 +215,6 @@ func ReadResponse(address *Address, itemCode int32, control *Control, rawValue s
 
 }
 
-type Protocol struct {
-	//Start 645协议起始符号
-	Start byte
-	//设备地址 6个字节的BCD
-	Address *Address
-	//Start  645协议起始符号 标志报文头结束
-	Start2 byte
-	//Control 控制域
-	Control *Control
-	//Control 数据长度
-	DataLength byte
-	//Control 数据抽象
-	Data *Data
-	//CS 校验和
-	CS byte
-	//End 0x16
-	End byte
-}
-
 func (p Protocol) Encode(buffer *bytes.Buffer) error {
 	//计算cs 需要重写开辟字节码缓冲区
 	tmp := make([]byte, 0)
@@ -233,7 +232,6 @@ func (p Protocol) Encode(buffer *bytes.Buffer) error {
 	err = p.Control.Encode(bf)
 	write(&p.DataLength)
 	err = p.Data.Encode(bf)
-	//计算Cs
 	var cs = 0
 	for _, b := range bf.Bytes() {
 		cs += int(b)
@@ -338,11 +336,9 @@ func DecodeData(buffer *bytes.Buffer, size byte) (*Data, error) {
 	for index, item := range dataValue {
 		dataValue[index] = item - 0x33
 	}
-	//反转成小端的
 	for i, j := 0, len(dataValue)-1; i < j; i, j = i+1, j-1 {
 		dataValue[i], dataValue[j] = dataValue[j], dataValue[i]
 	}
-
 	for i, j := 0, len(dataType)-1; i < j; i, j = i+1, j-1 {
 		dataType[i], dataType[j] = dataType[j], dataType[i]
 	}
