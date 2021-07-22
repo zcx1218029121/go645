@@ -32,7 +32,7 @@ var _ InformationElement = (*Data)(nil)
 
 type InformationElement interface {
 	Encode(buffer *bytes.Buffer) error
-	getLen() uint16
+	getLen() byte
 }
 
 type Address struct {
@@ -66,7 +66,7 @@ func (a Address) Encode(buffer *bytes.Buffer) error {
 	return binary.Write(buffer, binary.BigEndian, a.value)
 }
 
-func (a Address) getLen() uint16 {
+func (a Address) getLen() byte {
 	return 6
 }
 
@@ -124,8 +124,7 @@ func (d Data) Encode(buffer *bytes.Buffer) error {
 	return nil
 }
 
-func (d Data) getLen() uint16 {
-
+func (d Data) getLen() byte {
 	if d.dataType[3] == 0x00 && d.dataType[0] == 0x00 {
 		return 4
 	} else if d.dataType[3] == 0x00 && d.dataType[0] == 0x01 {
@@ -143,24 +142,31 @@ func (d Data) getLen() uint16 {
 	} else if d.dataType[3] == 0x02 && d.dataType[0] == 0x00 && d.dataType[2] <= 0x05 {
 		return 3
 	}
-	return 0
+	return 4
 }
 
 func NewData(dataType int32, value string) *Data {
 	return &Data{dataType: Int2bytes(dataType), rawValue: value}
 }
 
-//ReadRequest 读数据
-func ReadRequest(address *Address, itemCode int32, control *Control) *Protocol {
+func NewProtocol(address *Address, data *Data, control *Control) *Protocol {
 	return &Protocol{
 		Start:      Start,
 		Start2:     Start,
 		End:        End,
 		Address:    address,
 		Control:    control,
-		DataLength: 0x04,
-		Data:       NewData(itemCode, ""),
+		DataLength: data.getLen(),
+		Data:       data,
 	}
+}
+
+//ReadRequest 读数据
+func ReadRequest(address *Address, itemCode int32) *Protocol {
+	c := NewControl()
+	c.SetState(Read)
+	d := NewData(itemCode, "")
+	return NewProtocol(address, d, c)
 
 }
 
@@ -207,30 +213,33 @@ func (p Protocol) Encode(buffer *bytes.Buffer) error {
 	//计算cs 需要重写开辟字节码缓冲区
 	tmp := make([]byte, 0)
 	bf := bytes.NewBuffer(tmp)
-	_ = binary.Write(bf, binary.LittleEndian, &p.Start)
-	_ = p.Address.Encode(bf)
-	_ = binary.Write(bf, binary.LittleEndian, &p.Start2)
-	_ = p.Control.Encode(bf)
-	_ = binary.Write(bf, binary.LittleEndian, &p.DataLength)
-	_ = p.Data.Encode(bf)
-
+	var err error
+	write := func(data interface{}) {
+		if err != nil {
+			return
+		}
+		err = binary.Write(bf, binary.LittleEndian, data)
+	}
+	write(&p.Start)
+	err = p.Address.Encode(bf)
+	write(&p.Start2)
+	err = p.Control.Encode(bf)
+	write(&p.DataLength)
+	err = p.Data.Encode(bf)
 	//计算Cs
 	var cs = 0
 	for _, b := range bf.Bytes() {
 		cs += int(b)
 	}
 	p.CS = byte(cs)
-	_ = binary.Write(bf, binary.LittleEndian, p.CS)
-	_ = binary.Write(bf, binary.LittleEndian, p.End)
-
-	//写入
-	_ = binary.Write(buffer, binary.LittleEndian, bf.Bytes())
-
-	return nil
+	write(p.CS)
+	write(p.End)
+	err = binary.Write(buffer, binary.LittleEndian, bf.Bytes())
+	return err
 
 }
 
-func (p Protocol) getLen() uint16 {
+func (p Protocol) getLen() byte {
 	return HeadLen + 4 + p.Data.getLen()
 }
 
@@ -271,39 +280,54 @@ func Hex2Byte(str string) []byte {
 	return bHex
 }
 
-func Decode(buffer *bytes.Buffer) *Protocol {
-
+func Decode(buffer *bytes.Buffer) (*Protocol, error) {
+	var err error
+	read := func(data interface{}) {
+		if err != nil {
+			return
+		}
+		err = binary.Read(buffer, binary.LittleEndian, data)
+	}
 	p := new(Protocol)
-	_ = binary.Read(buffer, binary.LittleEndian, &p.Start)
-	p.Address = DecodeAddress(buffer, 6, LittleEndian)
-	_ = binary.Read(buffer, binary.LittleEndian, &p.Start2)
-	p.Control = DecodeControl(buffer)
-	_ = binary.Read(buffer, binary.LittleEndian, &p.DataLength)
-	p.Data = DecodeData(buffer, p.DataLength)
-	_ = binary.Read(buffer, binary.LittleEndian, &p.CS)
-	_ = binary.Read(buffer, binary.LittleEndian, &p.End)
-	return p
+	read(&p.Start)
+	p.Address, err = DecodeAddress(buffer, 6)
+	read(&p.Start2)
+	p.Control, err = DecodeControl(buffer)
+	read(&p.DataLength)
+	p.Data, err = DecodeData(buffer, p.DataLength)
+	read(&p.CS)
+	read(&p.End)
+	return p, nil
 }
-func DecodeAddress(buffer *bytes.Buffer, size int, order Order) *Address {
+func DecodeAddress(buffer *bytes.Buffer, size int) (*Address, error) {
 	a := new(Address)
 	value := make([]byte, size)
-	_ = binary.Read(buffer, binary.LittleEndian, &value)
-
+	if err := binary.Read(buffer, binary.LittleEndian, &value); err != nil {
+		return nil, err
+	}
 	{
 		a.value = value
 		a.StrValue = Bcd2Number(a.value)
 	}
-	return a
+	return a, nil
 }
-func DecodeData(buffer *bytes.Buffer, size byte) *Data {
+func DecodeData(buffer *bytes.Buffer, size byte) (*Data, error) {
+
+	var err error
+	read := func(data interface{}) {
+		if err != nil {
+			return
+		}
+		err = binary.Read(buffer, binary.LittleEndian, data)
+	}
 	data := new(Data)
 	var dataType [4]byte
 	dataValue := make([]byte, size-4)
-	_ = binary.Read(buffer, binary.LittleEndian, &dataType)
+	read(&dataType)
 	for index, item := range dataType {
 		dataType[index] = item - 0x33
 	}
-	_ = binary.Read(buffer, binary.LittleEndian, &dataValue)
+	read(&dataValue)
 	for index, item := range dataValue {
 		dataValue[index] = item - 0x33
 	}
@@ -317,18 +341,13 @@ func DecodeData(buffer *bytes.Buffer, size byte) *Data {
 	}
 	data.rawValue = Bcd2Number(dataValue)
 	data.dataType = dataType
-	return data
+	return data, nil
 }
 func Int2bytes(data int32) [4]byte {
-
 	var b3 [4]byte
-
 	b3[0] = uint8(data)
-
 	b3[1] = uint8(data >> 8)
-
 	b3[2] = uint8(data >> 16)
-
 	b3[3] = uint8(data >> 24)
 	return b3
 }

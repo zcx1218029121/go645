@@ -13,7 +13,7 @@ func TestDecode(t *testing.T) {
 	if err != nil {
 		return
 	}
-	p := Decode(bytes.NewBuffer(decodeString))
+	p, _ := Decode(bytes.NewBuffer(decodeString))
 	if p.Address.StrValue != "140100318221" {
 		t.Errorf("地址解析错误")
 	}
@@ -34,37 +34,34 @@ func TestRead(t *testing.T) {
 	data := make([]byte, 0)
 	c := NewControl()
 	c.SetState(Read)
-	r := ReadRequest(NewAddress("610100000000", BigEndian), 0x00_01_00_00, c)
+	r := ReadRequest(NewAddress("610100000000", BigEndian), 0x00_01_00_00)
 	bf := bytes.NewBuffer(data)
 	_ = r.Encode(bf)
 
 	decodeString, _ := hex.DecodeString(str)
-	p2 := Decode(bytes.NewBuffer(decodeString))
-	p := Decode(bf)
-
+	p2, _ := Decode(bytes.NewBuffer(decodeString))
+	p, _ := Decode(bf)
 	if !p.Control.IsState(Read) {
 		t.Errorf("状态解析错误")
 	}
-
 	if p.Data.dataType != p2.Data.dataType {
 		t.Errorf("数据项解析错误")
 	}
 	if p.CS != p2.CS {
 		t.Errorf("校验码解析错误")
 	}
-
 }
 func TestSend(t *testing.T) {
 	str := "68610100000000681104333334331416"
 	data := make([]byte, 0)
 	c := NewControl()
 	c.SetState(Read)
-	r := ReadRequest(NewAddress("610100000000", BigEndian), 0x00_01_00_00, c)
+	r := ReadRequest(NewAddress("610100000000", BigEndian), 0x00_01_00_00)
 	bf := bytes.NewBuffer(data)
 	_ = r.Encode(bf)
-	p := Decode(bf)
+	p, _ := Decode(bf)
 	decodeString, _ := hex.DecodeString(str)
-	p2 := Decode(bytes.NewBuffer(decodeString))
+	p2, _ := Decode(bytes.NewBuffer(decodeString))
 	if p2.Address.StrValue != p.Address.StrValue {
 		t.Errorf("地址错误")
 	}
@@ -77,12 +74,12 @@ func TestLEnd(t *testing.T) {
 	data := make([]byte, 0)
 	c := NewControl()
 	c.SetState(Read)
-	r := ReadRequest(NewAddress("610100000000", LittleEndian), 0x00_01_00_00, c)
+	r := ReadRequest(NewAddress("610100000000", LittleEndian), 0x00_01_00_00)
 	bf := bytes.NewBuffer(data)
 	_ = r.Encode(bf)
-	p := Decode(bf)
+	p, _ := Decode(bf)
 	decodeString, _ := hex.DecodeString(str)
-	p2 := Decode(bytes.NewBuffer(decodeString))
+	p2, _ := Decode(bytes.NewBuffer(decodeString))
 	if p.Address.StrValue != "000000000161" {
 		t.Errorf("地址错误")
 	}

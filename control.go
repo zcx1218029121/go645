@@ -26,15 +26,16 @@ type Control struct {
 	Data ControlType
 }
 
-func DecodeControl(buffer *bytes.Buffer) *Control {
+func DecodeControl(buffer *bytes.Buffer) (*Control, error) {
 	c := new(Control)
-	_ = binary.Read(buffer, binary.LittleEndian, &c.Data)
-	return c
+	if err := binary.Read(buffer, binary.LittleEndian, &c.Data); err != nil {
+		return nil, err
+	}
+	return c, nil
 }
 func NewControl() *Control {
 	return &Control{Data: 0}
 }
-
 
 func (c *Control) SetState(state ControlType) {
 	c.Data = c.Data | state
@@ -45,12 +46,12 @@ func (c *Control) IsState(state ControlType) bool {
 func (c *Control) Reset() {
 	c.Data = 0
 }
-func (a *Control) getLen() uint16 {
+func (c *Control) getLen() uint16 {
 	return 1
 }
 
-func (a *Control) Encode(buffer *bytes.Buffer) error {
-	if err := binary.Write(buffer, binary.BigEndian, a.Data); err != nil {
+func (c *Control) Encode(buffer *bytes.Buffer) error {
+	if err := binary.Write(buffer, binary.BigEndian, c.Data); err != nil {
 		s := fmt.Sprintf("Pack version error , %v", err)
 		return errors.New(s)
 	}
