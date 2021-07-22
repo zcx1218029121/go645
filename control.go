@@ -10,16 +10,14 @@ import (
 type ControlType byte
 
 const (
-	IsSlave ControlType = 1 << 7
-	SlaveOk ControlType = 1 << 6
-	hasNext ControlType = 1 << 5
-
-	Retain       ControlType = 0b00000
-	Broadcast    ControlType = 0b01000
-	ReadNext     ControlType = 0b10010
-	ReadAddress  ControlType = 0b10011
-	Read         ControlType = 0b10001
-	HeartConfirm ControlType = 1 << 2
+	IsSlave     ControlType = 1 << 7
+	SlaveOk     ControlType = 1 << 6
+	hasNext     ControlType = 1 << 5
+	Retain      ControlType = 0b00000
+	Broadcast   ControlType = 0b01000
+	ReadNext    ControlType = 0b10010
+	ReadAddress ControlType = 0b10011
+	Read        ControlType = 0b10001
 )
 
 type Control struct {
