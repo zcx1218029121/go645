@@ -14,7 +14,7 @@ func TestDecode(t *testing.T) {
 		return
 	}
 	p, _ := Decode(bytes.NewBuffer(decodeString))
-	if p.Address.StrValue != "140100318221" {
+	if p.Address.strValue != "140100318221" {
 		t.Errorf("地址解析错误")
 	}
 	if !p.Control.IsState(IsSlave) || !p.Control.IsState(Read) {
@@ -62,7 +62,7 @@ func TestSend(t *testing.T) {
 	p, _ := Decode(bf)
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
-	if p2.Address.StrValue != p.Address.StrValue {
+	if p2.Address.strValue != p.Address.strValue {
 		t.Errorf("地址错误")
 	}
 	if p.CS != p2.CS {
@@ -80,7 +80,7 @@ func TestLEnd(t *testing.T) {
 	p, _ := Decode(bf)
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
-	if p.Address.StrValue != "000000000161" {
+	if p2.Address.GetStrAddress(LittleEndian) != "000000000161" {
 		t.Errorf("地址错误")
 	}
 	if p.CS != p2.CS {

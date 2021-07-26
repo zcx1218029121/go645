@@ -19,7 +19,7 @@ type (
 	//Address 表计地址
 	Address struct {
 		value    []byte
-		StrValue string
+		strValue string
 	}
 	//Data 数据域
 	Data struct {
@@ -79,7 +79,7 @@ func NewAddress(address string, order Order) *Address {
 		}
 	}
 
-	return &Address{value: value, StrValue: address}
+	return &Address{value: value, strValue: address}
 }
 
 func NewData(dataType int32, value string) *Data {
@@ -105,6 +105,17 @@ func NewProtocol(address *Address, data *Data, control *Control) *Protocol {
 //      error 解码异常
 func (a Address) Encode(buffer *bytes.Buffer) error {
 	return binary.Write(buffer, binary.BigEndian, a.value)
+}
+
+func (a Address) GetStrAddress(order Order) string {
+	if !order {
+		temp := make([]byte, len(a.value))
+		for i, j := 0, len(a.value)-1; i < j; i, j = i+1, j-1 {
+			temp[i], temp[j] = a.value[j], a.value[i]
+		}
+		return Bcd2Number(temp)
+	}
+	return a.strValue
 }
 
 func (a Address) getLen() byte {
@@ -311,7 +322,7 @@ func DecodeAddress(buffer *bytes.Buffer, size int) (*Address, error) {
 	}
 	{
 		a.value = value
-		a.StrValue = Bcd2Number(a.value)
+		a.strValue = Bcd2Number(a.value)
 	}
 	return a, nil
 }
