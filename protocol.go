@@ -25,7 +25,6 @@ type (
 	Data struct {
 		//数据标识 4 个字节
 		dataType [4]byte
-
 		//原始数据
 		rawValue string
 	}

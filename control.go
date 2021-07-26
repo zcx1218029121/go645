@@ -38,8 +38,25 @@ func NewControl() *Control {
 func (c *Control) SetState(state ControlType) {
 	c.Data = c.Data | state
 }
+
+//SetStates 批量设置状态
+func (c *Control) SetStates(state ...ControlType) {
+	for _, s := range state {
+		c.Data = c.Data | s
+	}
+}
 func (c *Control) IsState(state ControlType) bool {
 	return (c.Data & state) == state
+}
+
+//IsStates 判断控制域
+func (c *Control) IsStates(state ...ControlType) bool {
+	for _, s := range state {
+		if !c.IsState(s) {
+			return false
+		}
+	}
+	return true
 }
 func (c *Control) Reset() {
 	c.Data = 0
