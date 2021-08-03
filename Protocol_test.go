@@ -41,6 +41,7 @@ func TestRead(t *testing.T) {
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
 	p, _ := Decode(bf)
+
 	if !p.Control.IsState(Read) {
 		t.Errorf("状态解析错误")
 	}
@@ -62,12 +63,9 @@ func TestSend(t *testing.T) {
 	p, _ := Decode(bf)
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
-	if p2.Address.strValue != p.Address.strValue {
-		t.Errorf("地址错误")
-	}
-	if p.CS != p2.CS {
-		t.Errorf("校验码错误")
-	}
+	AssertEquest("地址错误", p2.Address.strValue, p.Address.strValue, t)
+	AssertEquest("校验码错误", p.CS, p2.CS, t)
+
 }
 func TestLEnd(t *testing.T) {
 	str := "68610100000000681104333334331416"
@@ -80,10 +78,14 @@ func TestLEnd(t *testing.T) {
 	p, _ := Decode(bf)
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
-	if p2.Address.GetStrAddress(LittleEndian) != "000000000161" {
-		t.Errorf("地址错误")
+	AssertEquest("地址错误", p2.Address.GetStrAddress(LittleEndian), "000000000161", t)
+	AssertEquest("校验码错误", p.CS, p2.CS, t)
+}
+func Assert(msg string, assert func() bool, t *testing.T) {
+	if !assert() {
+		t.Errorf(msg)
 	}
-	if p.CS != p2.CS {
-		t.Errorf("校验码错误")
-	}
+}
+func AssertEquest(msg string, exp interface{}, act interface{}, t *testing.T) {
+	Assert(msg, func() bool { return exp == act }, t)
 }
