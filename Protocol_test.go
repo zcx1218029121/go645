@@ -41,16 +41,9 @@ func TestRead(t *testing.T) {
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
 	p, _ := Decode(bf)
-
-	if !p.Control.IsState(Read) {
-		t.Errorf("状态解析错误")
-	}
-	if p.Data.dataType != p2.Data.dataType {
-		t.Errorf("数据项解析错误")
-	}
-	if p.CS != p2.CS {
-		t.Errorf("校验码解析错误")
-	}
+	Assert("状态解析错误", func() bool { return p.Control.IsState(Read) }, t)
+	AssertEquest("数据项解析错误", p.Data.dataType, p2.Data.dataType, t)
+	AssertEquest("校验码解析错误", p.CS, p2.CS, t)
 }
 func TestSend(t *testing.T) {
 	str := "68610100000000681104333334331416"
@@ -79,6 +72,7 @@ func TestLEnd(t *testing.T) {
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
 	AssertEquest("地址错误", p2.Address.GetStrAddress(LittleEndian), "000000000161", t)
+	AssertEquest("地址错误", p2.Address.GetStrAddress(BigEndian), "610100000000", t)
 	AssertEquest("校验码错误", p.CS, p2.CS, t)
 }
 func Assert(msg string, assert func() bool, t *testing.T) {
