@@ -204,7 +204,6 @@ func ReadRequest(address *Address, itemCode int32) *Protocol {
 
 //GetHex 返回16进制string
 func GetHex(protocol *Protocol) (string, error) {
-
 	bf := bytes.NewBuffer(make([]byte, 0))
 	if err := protocol.Encode(bf); err != nil {
 		return "", err
@@ -255,6 +254,9 @@ func (p Protocol) Encode(buffer *bytes.Buffer) error {
 }
 
 func (p Protocol) getLen() byte {
+	if p.DataLength != 0 {
+		return p.DataLength
+	}
 	return HeadLen + 4 + p.Data.getLen()
 }
 

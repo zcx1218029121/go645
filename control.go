@@ -52,12 +52,14 @@ func (c *Control) IsState(state ControlType) bool {
 //IsStates 判断控制域
 func (c *Control) IsStates(state ...ControlType) bool {
 	for _, s := range state {
+		// @XA
 		if !c.IsState(s) {
 			return false
 		}
 	}
 	return true
 }
+
 func (c *Control) Reset() {
 	c.Data = 0
 }
@@ -67,7 +69,7 @@ func (c *Control) getLen() uint16 {
 
 func (c *Control) Encode(buffer *bytes.Buffer) error {
 	if err := binary.Write(buffer, binary.BigEndian, c.Data); err != nil {
-		s := fmt.Sprintf("Pack version error , %v", err)
+		s := fmt.Sprintf("Control , %v", err)
 		return errors.New(s)
 	}
 	return nil
