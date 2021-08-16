@@ -12,7 +12,7 @@ type ControlType byte
 const (
 	IsSlave     ControlType = 1 << 7
 	SlaveOk     ControlType = 1 << 6
-	hasNext     ControlType = 1 << 5
+	HasNext     ControlType = 1 << 5
 	Retain      ControlType = 0b00000
 	Broadcast   ControlType = 0b01000
 	ReadNext    ControlType = 0b10010

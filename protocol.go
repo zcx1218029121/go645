@@ -175,20 +175,6 @@ func (d Data) Encode(buffer *bytes.Buffer) error {
 func (d Data) getLen() byte {
 	if d.dataType[3] == 0x00 && d.dataType[0] == 0x00 {
 		return 4
-	} else if d.dataType[3] == 0x00 && d.dataType[0] == 0x01 {
-		return 4
-	} else if d.dataType[3] == 0x00 && d.dataType[0] == 0x0c {
-		return 4
-	} else if d.dataType[3] == 0x01 && d.dataType[0] == 0x00 {
-		return 8
-	} else if d.dataType[3] == 0x01 && d.dataType[0] == 0x01 {
-		return 8
-	} else if d.dataType[3] == 0x01 && d.dataType[0] == 0x0c {
-		return 8
-	} else if d.dataType[3] == 0x02 && d.dataType[0] == 0x00 && d.dataType[2] == 0x01 {
-		return 2
-	} else if d.dataType[3] == 0x02 && d.dataType[0] == 0x00 && d.dataType[2] <= 0x05 {
-		return 3
 	}
 	return 4
 }

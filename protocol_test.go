@@ -2,7 +2,10 @@ package go645
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"testing"
 )
 
@@ -16,6 +19,9 @@ func TestDecode(t *testing.T) {
 	p, _ := Decode(bytes.NewBuffer(decodeString))
 	if p.Address.strValue != "140100318221" {
 		t.Errorf("地址解析错误")
+	}
+	if p.Address.getLen() != 6 {
+		t.Errorf("长度错误")
 	}
 	if !p.Control.IsState(IsSlave) || !p.Control.IsState(Read) {
 		t.Errorf("状态解析错误")
@@ -45,6 +51,8 @@ func TestRead(t *testing.T) {
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
 	p, _ := Decode(bf)
+	p.Data.GetDataTypeStr()
+	p.Data.GetDataType()
 	Assert("状态解析错误", func() bool { return p.Control.IsState(Read) }, t)
 	AssertEquest("数据项解析错误", p.Data.dataType, p2.Data.dataType, t)
 	AssertEquest("校验码解析错误", p.CS, p2.CS, t)
@@ -103,5 +111,42 @@ func TestControl_IsState(t *testing.T) {
 	c.Reset()
 	if c.IsStates(SlaveOk) {
 		t.Errorf("复归错误")
+	}
+}
+func TestControl(t *testing.T) {
+	c := &Control{}
+	if c.getLen() != 1 {
+		t.Errorf("长度错误")
+	}
+	c.SetState(SlaveOk)
+	if !c.IsState(SlaveOk) {
+		t.Errorf("设置错误")
+	}
+	c.Reset()
+	if c.IsState(SlaveOk) {
+		t.Errorf("复归错误")
+	}
+	c.SetStates(SlaveOk, IsSlave, HasNext, Retain, Broadcast, ReadNext, ReadAddress)
+	if !c.IsStates(SlaveOk, IsSlave) {
+		t.Errorf("设置错误")
+	}
+}
+func (c *Control) TestErr(buffer *bytes.Buffer) error {
+
+	var bf *bytes.Buffer
+	r := ReadRequest(NewAddress("610100000000", LittleEndian), 0x00_01_00_00)
+	_ = r.Encode(bf)
+
+	if err := binary.Write(buffer, binary.BigEndian, c.Data); err != nil {
+		s := fmt.Sprintf("Control , %v", err)
+		return errors.New(s)
+	}
+	return nil
+}
+func TestReadResponse(t *testing.T) {
+	rp := ReadResponse(NewAddress("610100000000", LittleEndian), 0x00_01_00_00, NewControl(), "200")
+
+	if rp.Address.GetStrAddress(LittleEndian) != "610100000000" {
+		t.Errorf("地址错误")
 	}
 }
