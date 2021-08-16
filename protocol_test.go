@@ -49,6 +49,8 @@ func TestRead(t *testing.T) {
 	AssertEquest("数据项解析错误", p.Data.dataType, p2.Data.dataType, t)
 	AssertEquest("校验码解析错误", p.CS, p2.CS, t)
 }
+
+//TestSend 测试发送
 func TestSend(t *testing.T) {
 	str := "68610100000000681104333334331416"
 	data := make([]byte, 0)
