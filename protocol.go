@@ -211,6 +211,7 @@ func GetHex(protocol *Protocol) (string, error) {
 	return hex.EncodeToString(bf.Bytes()), nil
 }
 
+//ReadResponse 创建读响应
 func ReadResponse(address *Address, itemCode int32, control *Control, rawValue string) *Protocol {
 	return &Protocol{
 		Start:      Start,
