@@ -77,6 +77,7 @@ func TestLEnd(t *testing.T) {
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
 	AssertEquest("地址错误", p2.Address.GetStrAddress(LittleEndian), "000000000161", t)
+	AssertEquest("地址错误", p2.Address.GetStrAddress(BigEndian), "610100000000", t)
 	AssertEquest("校验码错误", p.CS, p2.CS, t)
 }
 func Assert(msg string, assert func() bool, t *testing.T) {
