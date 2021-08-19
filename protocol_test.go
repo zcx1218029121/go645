@@ -26,12 +26,12 @@ func TestDecode(t *testing.T) {
 	if !p.Control.IsState(IsSlave) || !p.Control.IsState(Read) {
 		t.Errorf("状态解析错误")
 	}
-	println(p.Data.GetFloat64Value())
+	println(p.Data.(*ReadData).GetFloat64Value())
 	if p.getLen() != 0x08 {
 		t.Errorf("长度错误")
 	}
 
-	if p.Data.dataType != [4]byte{0, 1, 0, 0} {
+	if p.Data.(*ReadData).dataType != [4]byte{0, 1, 0, 0} {
 		t.Errorf("数据项解析错误")
 	}
 	print(GetHex(p))
@@ -51,10 +51,10 @@ func TestRead(t *testing.T) {
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
 	p, _ := Decode(bf)
-	p.Data.GetDataTypeStr()
-	p.Data.GetDataType()
+	p.Data.(*ReadData).GetDataTypeStr()
+	p.Data.(*ReadData).GetDataType()
 	Assert("状态解析错误", func() bool { return p.Control.IsState(Read) }, t)
-	AssertEquest("数据项解析错误", p.Data.dataType, p2.Data.dataType, t)
+	AssertEquest("数据项解析错误", p.Data.(*ReadData).dataType, p2.Data.(*ReadData).dataType, t)
 	AssertEquest("校验码解析错误", p.CS, p2.CS, t)
 }
 
@@ -70,7 +70,7 @@ func TestSend(t *testing.T) {
 	p, _ := Decode(bf)
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
-	print(p.Data.GetValue())
+	print(p.Data.(*ReadData).GetValue())
 	AssertEquest("地址错误", p2.Address.strValue, p.Address.strValue, t)
 	AssertEquest("校验码错误", p.CS, p2.CS, t)
 

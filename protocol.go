@@ -16,13 +16,14 @@ type (
 		Encode(buffer *bytes.Buffer) error
 		getLen() byte
 	}
+
 	//Address 表计地址
 	Address struct {
 		value    []byte
 		strValue string
 	}
 	//Data 数据域
-	Data struct {
+	ReadData struct {
 		//数据标识 4 个字节
 		dataType [4]byte
 		//原始数据
@@ -41,7 +42,7 @@ type (
 		//Control 数据长度
 		DataLength byte
 		//Control 数据抽象
-		Data *Data
+		Data InformationElement
 		//CS 校验和
 		CS byte
 		//End 0x16
@@ -62,7 +63,7 @@ var (
 
 	_ InformationElement = (*Protocol)(nil)
 
-	_ InformationElement = (*Data)(nil)
+	_ InformationElement = (*ReadData)(nil)
 )
 
 // NewAddress ，构建设备地址
@@ -82,11 +83,11 @@ func NewAddress(address string, order Order) *Address {
 	return &Address{value: value, strValue: address}
 }
 
-func NewData(dataType int32, value string) *Data {
-	return &Data{dataType: Int2bytes(dataType), rawValue: value}
+func NewData(dataType int32, value string) *ReadData {
+	return &ReadData{dataType: Int2bytes(dataType), rawValue: value}
 }
 
-func NewProtocol(address *Address, data *Data, control *Control) *Protocol {
+func NewProtocol(address *Address, data *ReadData, control *Control) *Protocol {
 	return &Protocol{
 		Start:      Start,
 		Start2:     Start,
@@ -122,10 +123,10 @@ func (a Address) getLen() byte {
 	return 6
 }
 
-func (d Data) GetDataType() [4]byte {
+func (d ReadData) GetDataType() [4]byte {
 	return d.dataType
 }
-func (d Data) GetDataTypeStr() string {
+func (d ReadData) GetDataTypeStr() string {
 	//需要翻转
 	var a = make([]byte, 4)
 	for i, j := 0, len(d.dataType)-1; i < j; i, j = i+1, j-1 {
@@ -134,7 +135,7 @@ func (d Data) GetDataTypeStr() string {
 	return hex.EncodeToString(a)
 }
 
-func (d *Data) GetFloat64Value() float64 {
+func (d *ReadData) GetFloat64Value() float64 {
 	if d.dataType[0] == 0x00 || d.dataType[0] == 0x0c {
 		value, _ := strconv.Atoi(d.rawValue)
 		return float64(value) * 0.01
@@ -145,11 +146,11 @@ func (d *Data) GetFloat64Value() float64 {
 	return 0
 }
 
-func (d *Data) GetValue() string {
+func (d *ReadData) GetValue() string {
 	return d.rawValue
 }
 
-func (d Data) Encode(buffer *bytes.Buffer) error {
+func (d ReadData) Encode(buffer *bytes.Buffer) error {
 	//写入数据域 已经反转过了
 	for index, b := range d.dataType {
 		d.dataType[index] = b + 0x33
@@ -172,7 +173,7 @@ func (d Data) Encode(buffer *bytes.Buffer) error {
 	return nil
 }
 
-func (d Data) getLen() byte {
+func (d ReadData) getLen() byte {
 	if d.dataType[3] == 0x00 && d.dataType[0] == 0x00 {
 		return 4
 	}
@@ -298,7 +299,7 @@ func Decode(buffer *bytes.Buffer) (*Protocol, error) {
 	read(&p.Start2)
 	p.Control, err = DecodeControl(buffer)
 	read(&p.DataLength)
-	p.Data, err = DecodeData(buffer, p.DataLength)
+	p.Data = Handler(p.Control, buffer, p.DataLength)
 	read(&p.CS)
 	read(&p.End)
 	return p, nil
@@ -315,7 +316,7 @@ func DecodeAddress(buffer *bytes.Buffer, size int) (*Address, error) {
 	}
 	return a, nil
 }
-func DecodeData(buffer *bytes.Buffer, size byte) (*Data, error) {
+func DecodeData(buffer *bytes.Buffer, size byte) (*ReadData, error) {
 
 	var err error
 	read := func(data interface{}) {
@@ -324,7 +325,7 @@ func DecodeData(buffer *bytes.Buffer, size byte) (*Data, error) {
 		}
 		err = binary.Read(buffer, binary.LittleEndian, data)
 	}
-	data := new(Data)
+	data := new(ReadData)
 	var dataType [4]byte
 	dataValue := make([]byte, size-4)
 	read(&dataType)
@@ -352,4 +353,40 @@ func Int2bytes(data int32) [4]byte {
 	b3[2] = uint8(data >> 16)
 	b3[3] = uint8(data >> 24)
 	return b3
+}
+func DecoderData(buffer *bytes.Buffer, size int) (*bytes.Buffer, error) {
+	var err error
+	read := func(data interface{}) {
+		if err != nil {
+			return
+		}
+		err = binary.Read(buffer, binary.LittleEndian, data)
+	}
+	var value = make([]byte, size)
+	read(value)
+	for i, j := 0, len(value)-1; i < j; i, j = i+1, j-1 {
+		value[i], value[j] = value[j]-0x33, value[i]-0x33
+	}
+
+	return bytes.NewBuffer(value), nil
+}
+
+func DecodeRead(buffer *bytes.Buffer, size int) InformationElement {
+	df, _ := DecoderData(buffer, size)
+	var err error
+	read := func(data interface{}) {
+		if err != nil {
+			return
+		}
+		err = binary.Read(df, binary.LittleEndian, data)
+	}
+	data := new(ReadData)
+	var dataType [4]byte
+	dataValue := make([]byte, size-4)
+	read(&dataValue)
+	read(&dataType)
+
+	data.rawValue = Bcd2Number(dataValue)
+	data.dataType = dataType
+	return data
 }
