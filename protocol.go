@@ -9,6 +9,24 @@ import (
 	"strings"
 )
 
+const (
+	LittleEndian Order = false
+	BigEndian    Order = true
+	Start              = 0x68
+	End                = 0x16
+	HeadLen            = 1 + 6 + 1
+)
+
+var (
+	_ InformationElement = (*Address)(nil)
+
+	_ InformationElement = (*Protocol)(nil)
+
+	_ InformationElement = (*ReadData)(nil)
+
+	_ InformationElement = (*ReadRequestData)(nil)
+)
+
 type (
 	//Order 地址大小端
 	Order              bool
@@ -22,19 +40,13 @@ type (
 		value    []byte
 		strValue string
 	}
-	//Data 数据域
-	ReadData struct {
-		//数据标识 4 个字节
-		dataType [4]byte
-		//原始数据
-		rawValue string
-	}
+
 	//Protocol 协议
 	Protocol struct {
 		//Start 645协议起始符号
 		Start byte
 		//设备地址 6个字节的BCD
-		Address *Address
+		Address Address
 		//Start  645协议起始符号 标志报文头结束
 		Start2 byte
 		//Control 控制域
@@ -50,29 +62,13 @@ type (
 	}
 )
 
-const (
-	LittleEndian Order = false
-	BigEndian    Order = true
-	Start              = 0x68
-	End                = 0x16
-	HeadLen            = 1 + 6 + 1
-)
-
-var (
-	_ InformationElement = (*Address)(nil)
-
-	_ InformationElement = (*Protocol)(nil)
-
-	_ InformationElement = (*ReadData)(nil)
-)
-
 // NewAddress ，构建设备地址
 // 参数：
 //      address ： 设备地址
 //      order ： 大小端表示
 // 返回值：
 //      *Address 设备地址
-func NewAddress(address string, order Order) *Address {
+func NewAddress(address string, order Order) Address {
 	value := Number2bcd(address)
 	if !order {
 		for i, j := 0, len(value)-1; i < j; i, j = i+1, j-1 {
@@ -80,14 +76,14 @@ func NewAddress(address string, order Order) *Address {
 		}
 	}
 
-	return &Address{value: value, strValue: address}
+	return Address{value: value, strValue: address}
 }
 
-func NewData(dataType int32, value string) *ReadData {
-	return &ReadData{dataType: Int2bytes(dataType), rawValue: value}
+func NewReadData(dataType int32, value string) ReadData {
+	return ReadData{dataType: Int2bytes(dataType), rawValue: value}
 }
 
-func NewProtocol(address *Address, data *ReadData, control *Control) *Protocol {
+func NewProtocol(address Address, data InformationElement, control *Control) *Protocol {
 	return &Protocol{
 		Start:      Start,
 		Start2:     Start,
@@ -123,72 +119,6 @@ func (a Address) getLen() byte {
 	return 6
 }
 
-func (d ReadData) GetDataType() [4]byte {
-	return d.dataType
-}
-func (d ReadData) GetDataTypeStr() string {
-	//需要翻转
-	var a = make([]byte, 4)
-	for i, j := 0, len(d.dataType)-1; i < j; i, j = i+1, j-1 {
-		a[i], a[j] = d.dataType[i], d.dataType[j]
-	}
-	return hex.EncodeToString(a)
-}
-
-func (d *ReadData) GetFloat64Value() float64 {
-	if d.dataType[0] == 0x00 || d.dataType[0] == 0x0c {
-		value, _ := strconv.Atoi(d.rawValue)
-		return float64(value) * 0.01
-	} else if d.dataType[3] == 0x02 {
-		value, _ := strconv.Atoi(d.rawValue)
-		return float64(value) * 0.0001
-	}
-	return 0
-}
-
-func (d *ReadData) GetValue() string {
-	return d.rawValue
-}
-
-func (d ReadData) Encode(buffer *bytes.Buffer) error {
-	//写入数据域 已经反转过了
-	for index, b := range d.dataType {
-		d.dataType[index] = b + 0x33
-	}
-	if err := binary.Write(buffer, binary.LittleEndian, d.dataType); err != nil {
-		return err
-	}
-	if d.rawValue != "" {
-		//写入数据
-		bcd := Number2bcd(d.rawValue)
-		//翻转
-		for i, j := 0, len(bcd)-1; i < j; i, j = i+1, j-1 {
-			bcd[i], bcd[j] = bcd[j], bcd[i]
-		}
-		if err := binary.Write(buffer, binary.LittleEndian, &bcd); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func (d ReadData) getLen() byte {
-	if d.dataType[3] == 0x00 && d.dataType[0] == 0x00 {
-		return 4
-	}
-	return 4
-}
-
-//ReadRequest 读数据
-func ReadRequest(address *Address, itemCode int32) *Protocol {
-	c := NewControl()
-	c.SetState(Read)
-	d := NewData(itemCode, "")
-	return NewProtocol(address, d, c)
-
-}
-
 //GetHex 返回16进制string
 func GetHex(protocol *Protocol) (string, error) {
 	bf := bytes.NewBuffer(make([]byte, 0))
@@ -196,20 +126,6 @@ func GetHex(protocol *Protocol) (string, error) {
 		return "", err
 	}
 	return hex.EncodeToString(bf.Bytes()), nil
-}
-
-//ReadResponse 创建读响应
-func ReadResponse(address *Address, itemCode int32, control *Control, rawValue string) *Protocol {
-	return &Protocol{
-		Start:      Start,
-		Start2:     Start,
-		End:        End,
-		Address:    address,
-		Control:    control,
-		DataLength: 0x04,
-		Data:       NewData(itemCode, rawValue),
-	}
-
 }
 
 func (p Protocol) Encode(buffer *bytes.Buffer) error {
@@ -285,67 +201,6 @@ func Hex2Byte(str string) []byte {
 	return bHex
 }
 
-func Decode(buffer *bytes.Buffer) (*Protocol, error) {
-	var err error
-	read := func(data interface{}) {
-		if err != nil {
-			return
-		}
-		err = binary.Read(buffer, binary.LittleEndian, data)
-	}
-	p := new(Protocol)
-	read(&p.Start)
-	p.Address, err = DecodeAddress(buffer, 6)
-	read(&p.Start2)
-	p.Control, err = DecodeControl(buffer)
-	read(&p.DataLength)
-	p.Data = Handler(p.Control, buffer, p.DataLength)
-	read(&p.CS)
-	read(&p.End)
-	return p, nil
-}
-func DecodeAddress(buffer *bytes.Buffer, size int) (*Address, error) {
-	a := new(Address)
-	value := make([]byte, size)
-	if err := binary.Read(buffer, binary.LittleEndian, &value); err != nil {
-		return nil, err
-	}
-	{
-		a.value = value
-		a.strValue = Bcd2Number(a.value)
-	}
-	return a, nil
-}
-func DecodeData(buffer *bytes.Buffer, size byte) (*ReadData, error) {
-
-	var err error
-	read := func(data interface{}) {
-		if err != nil {
-			return
-		}
-		err = binary.Read(buffer, binary.LittleEndian, data)
-	}
-	data := new(ReadData)
-	var dataType [4]byte
-	dataValue := make([]byte, size-4)
-	read(&dataType)
-	for index, item := range dataType {
-		dataType[index] = item - 0x33
-	}
-	read(&dataValue)
-	for index, item := range dataValue {
-		dataValue[index] = item - 0x33
-	}
-	for i, j := 0, len(dataValue)-1; i < j; i, j = i+1, j-1 {
-		dataValue[i], dataValue[j] = dataValue[j], dataValue[i]
-	}
-	for i, j := 0, len(dataType)-1; i < j; i, j = i+1, j-1 {
-		dataType[i], dataType[j] = dataType[j], dataType[i]
-	}
-	data.rawValue = Bcd2Number(dataValue)
-	data.dataType = dataType
-	return data, nil
-}
 func Int2bytes(data int32) [4]byte {
 	var b3 [4]byte
 	b3[0] = uint8(data)
@@ -354,39 +209,7 @@ func Int2bytes(data int32) [4]byte {
 	b3[3] = uint8(data >> 24)
 	return b3
 }
-func DecoderData(buffer *bytes.Buffer, size int) (*bytes.Buffer, error) {
-	var err error
-	read := func(data interface{}) {
-		if err != nil {
-			return
-		}
-		err = binary.Read(buffer, binary.LittleEndian, data)
-	}
-	var value = make([]byte, size)
-	read(value)
-	for i, j := 0, len(value)-1; i < j; i, j = i+1, j-1 {
-		value[i], value[j] = value[j]-0x33, value[i]-0x33
-	}
 
-	return bytes.NewBuffer(value), nil
-}
-
-func DecodeRead(buffer *bytes.Buffer, size int) InformationElement {
-	df, _ := DecoderData(buffer, size)
-	var err error
-	read := func(data interface{}) {
-		if err != nil {
-			return
-		}
-		err = binary.Read(df, binary.LittleEndian, data)
-	}
-	data := new(ReadData)
-	var dataType [4]byte
-	dataValue := make([]byte, size-4)
-	read(&dataValue)
-	read(&dataType)
-
-	data.rawValue = Bcd2Number(dataValue)
-	data.dataType = dataType
-	return data
+func WriteWithOffSet(buffer *bytes.Buffer, data byte) error {
+	return binary.Write(buffer, binary.LittleEndian, data+0x33)
 }

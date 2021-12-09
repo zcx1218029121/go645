@@ -10,14 +10,32 @@ import (
 type ControlType byte
 
 const (
-	IsSlave     ControlType = 1 << 7
-	SlaveOk     ControlType = 1 << 6
-	HasNext     ControlType = 1 << 5
-	Retain      ControlType = 0b00000
-	Broadcast   ControlType = 0b01000
-	ReadNext    ControlType = 0b10010
+	IsSlave ControlType = 1 << 7
+	SlaveOk ControlType = 1 << 6
+	HasNext ControlType = 1 << 5
+	//Retain 保留
+	Retain ControlType = 0b00000
+	//Broadcast 广播校时
+	Broadcast ControlType = 0b01000
+	// ReadNext 读后续10001
+	ReadNext ControlType = 0b10010
+	//ReadAddress 读通讯地址
 	ReadAddress ControlType = 0b10011
-	Read        ControlType = 0b10001
+	//Write 写数据
+	Write ControlType = 0b10100
+	//WriteAddress 读通讯地址
+	WriteAddress ControlType = 0b10101
+	//ToChangeCommunicationRate 更改通讯速率
+	ToChangeCommunicationRate ControlType = 0b10111
+	Freeze                    ControlType = 0b10110
+	//PassWord 修改密码
+	PassWord       ControlType = 0b11000
+	ResetMaxDemand ControlType = 0b11001
+	//ResetEM 电表清零
+	ResetEM    ControlType = 0b11010
+	ResetEvent ControlType = 0b11011
+	//Read 读
+	Read ControlType = 0b10001
 )
 
 type Control struct {
@@ -52,7 +70,6 @@ func (c *Control) IsState(state ControlType) bool {
 //IsStates 判断控制域
 func (c *Control) IsStates(state ...ControlType) bool {
 	for _, s := range state {
-		// @XA
 		if !c.IsState(s) {
 			return false
 		}
