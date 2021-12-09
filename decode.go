@@ -3,21 +3,21 @@ package go645
 import (
 	"bytes"
 	"encoding/binary"
+	"log"
 )
 
 type Decoder func(buffer *bytes.Buffer) (*InformationElement, error)
 
-func Handler(control *Control, buffer *bytes.Buffer, size byte) InformationElement {
-	//从站响应异常
-	if !control.IsState(SlaveOk) {
-
+func Handler(control *Control, buffer *bytes.Buffer, size byte) (InformationElement, error) {
+	//从站响应异常响应
+	if control.IsState(SlaveErr) {
+		return nil, DecodeException(buffer)
 	}
-
+	//从站读正确响应
 	if control.IsState(Read) {
-		return DecodeRead(buffer, int(size))
+		return DecodeRead(buffer, int(size)), nil
 	}
 	panic("没有定义的数据类型")
-	return nil
 }
 func Decode(buffer *bytes.Buffer) (*Protocol, error) {
 	var err error
@@ -33,9 +33,12 @@ func Decode(buffer *bytes.Buffer) (*Protocol, error) {
 	read(&p.Start2)
 	p.Control, err = DecodeControl(buffer)
 	read(&p.DataLength)
-	p.Data = Handler(p.Control, buffer, p.DataLength)
+	p.Data, err = Handler(p.Control, buffer, p.DataLength)
 	read(&p.CS)
 	read(&p.End)
+	if err != nil {
+		return nil, err
+	}
 	return p, nil
 }
 func DecodeAddress(buffer *bytes.Buffer, size int) (Address, error) {
@@ -115,4 +118,13 @@ func DecodeRead(buffer *bytes.Buffer, size int) InformationElement {
 	data.rawValue = Bcd2Number(dataValue)
 	data.dataType = dataType
 	return data
+}
+func DecodeException(buffer *bytes.Buffer) error {
+	var data uint16
+	err := binary.Read(buffer, binary.LittleEndian, &data)
+	if err != nil {
+		log.Print(err)
+		return nil
+	}
+	return &Exception{data}
 }

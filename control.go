@@ -10,9 +10,9 @@ import (
 type ControlType byte
 
 const (
-	IsSlave ControlType = 1 << 7
-	SlaveOk ControlType = 1 << 6
-	HasNext ControlType = 1 << 5
+	IsSlave  ControlType = 1 << 7
+	SlaveErr ControlType = 1 << 6
+	HasNext  ControlType = 1 << 5
 	//Retain 保留
 	Retain ControlType = 0b00000
 	//Broadcast 广播校时

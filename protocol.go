@@ -25,6 +25,8 @@ var (
 	_ InformationElement = (*ReadData)(nil)
 
 	_ InformationElement = (*ReadRequestData)(nil)
+
+	_ InformationElement = (*Exception)(nil)
 )
 
 type (

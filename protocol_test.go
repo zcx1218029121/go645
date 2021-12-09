@@ -104,12 +104,12 @@ func AssertState(assert func() bool, t *testing.T) {
 }
 func TestControl_IsState(t *testing.T) {
 	c := new(Control)
-	c.SetState(SlaveOk)
-	if !c.IsStates(SlaveOk) {
+	c.SetState(SlaveErr)
+	if !c.IsStates(SlaveErr) {
 		t.Errorf("设置状态错误")
 	}
 	c.Reset()
-	if c.IsStates(SlaveOk) {
+	if c.IsStates(SlaveErr) {
 		t.Errorf("复归错误")
 	}
 }
@@ -118,16 +118,16 @@ func TestControl(t *testing.T) {
 	if c.getLen() != 1 {
 		t.Errorf("长度错误")
 	}
-	c.SetState(SlaveOk)
-	if !c.IsState(SlaveOk) {
+	c.SetState(SlaveErr)
+	if !c.IsState(SlaveErr) {
 		t.Errorf("设置错误")
 	}
 	c.Reset()
-	if c.IsState(SlaveOk) {
+	if c.IsState(SlaveErr) {
 		t.Errorf("复归错误")
 	}
-	c.SetStates(SlaveOk, IsSlave, HasNext, Retain, Broadcast, ReadNext, ReadAddress)
-	if !c.IsStates(SlaveOk, IsSlave) {
+	c.SetStates(SlaveErr, IsSlave, HasNext, Retain, Broadcast, ReadNext, ReadAddress)
+	if !c.IsStates(SlaveErr, IsSlave) {
 		t.Errorf("设置错误")
 	}
 }
