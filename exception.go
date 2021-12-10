@@ -21,6 +21,6 @@ func (e Exception) Encode(buffer *bytes.Buffer) error {
 }
 
 //错误响应报文长度2
-func (e Exception) getLen() byte {
+func (e Exception) GetLen() byte {
 	return 2
 }

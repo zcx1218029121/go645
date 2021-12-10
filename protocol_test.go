@@ -20,14 +20,14 @@ func TestDecode(t *testing.T) {
 	if p.Address.strValue != "140100318221" {
 		t.Errorf("地址解析错误")
 	}
-	if p.Address.getLen() != 6 {
+	if p.Address.GetLen() != 6 {
 		t.Errorf("长度错误")
 	}
 	if !p.Control.IsState(IsSlave) || !p.Control.IsState(Read) {
 		t.Errorf("状态解析错误")
 	}
 	println(p.Data.(*ReadData).GetFloat64Value())
-	if p.getLen() != 0x08 {
+	if p.GetLen() != 0x08 {
 		t.Errorf("长度错误")
 	}
 
