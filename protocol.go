@@ -10,11 +10,12 @@ import (
 )
 
 const (
-	LittleEndian Order = false
-	BigEndian    Order = true
-	Start              = 0x68
-	End                = 0x16
-	HeadLen            = 1 + 6 + 1
+	LittleEndian     Order = false
+	BigEndian        Order = true
+	Start                  = 0x68
+	End                    = 0x16
+	HeadLen                = 1 + 6 + 1
+	BroadcastAddress       = "999999999999"
 )
 
 var (

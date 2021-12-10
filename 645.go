@@ -11,7 +11,6 @@ type ClientProvider interface {
 	// IsConnected returns a bool signifying whether
 	// the client is connected or not.
 	IsConnected() bool
-
 	LogMode(enable bool)
 	// Close disconnect the remote server
 	Close() error
@@ -22,6 +21,10 @@ type ClientProvider interface {
 	setLogProvider(p LogProvider)
 	Send(*Protocol) (aduResponse []byte, err error)
 	SendRawFrame(aduRequest []byte) (aduResponse []byte, err error)
+
+	//SendRawFrameNoAck 广播命令不需要返回码
+	SendRawFrameNoAck(aduRequest []byte) (err error)
+	ReadRawFrame() (aduResponse []byte, err error)
 }
 
 // LogProvider  log message levels only Debug and Error

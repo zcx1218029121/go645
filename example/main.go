@@ -19,11 +19,16 @@ func main() {
 
 	for {
 		time.Sleep(time.Second)
-		pr, err := c.Read(go645.NewAddress("3a2107000481", go645.LittleEndian), 0x00_01_00_00)
+		pr, ok, err := c.Read(go645.NewAddress("3a2107000481", go645.LittleEndian), 0x00_01_00_00)
 		if err != nil {
 			log.Print(err.Error())
 		} else {
-			println(pr.GetValue())
+			if ok {
+				println("有后续")
+			} else {
+				log.Print(pr.GetValue())
+			}
+
 		}
 
 	}

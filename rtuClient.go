@@ -3,6 +3,7 @@ package go645
 import (
 	"bufio"
 	"bytes"
+	"io"
 	"time"
 )
 
@@ -11,6 +12,38 @@ var _ ClientProvider = (*RTUClientProvider)(nil)
 type RTUClientProvider struct {
 	serialPort
 	logger
+}
+
+//ReadRawFrame 读取Frame 线程不安全
+func (sf *RTUClientProvider) ReadRawFrame() (aduResponse []byte, err error) {
+	return bufio.NewReader(sf.port).ReadSlice(End)
+}
+
+//SendRawFrameNoAck 广播命令不需要返回
+func (sf *RTUClientProvider) SendRawFrameNoAck(aduRequest []byte) (err error) {
+	if err = sf.connect(); err != nil {
+		return
+	}
+	// Send the request
+	sf.Debugf("sending [% x]", aduRequest)
+	//发送数据
+	_, err = sf.port.Write(aduRequest)
+	return err
+}
+
+//SendRawFrameWithHandle 广播命令不需要返回 线程不安全应该
+func (sf *RTUClientProvider) SendRawFrameWithHandle(aduRequest []byte, fun func(io.ReadWriteCloser)) (err error) {
+	sf.mu.Lock()
+	defer sf.mu.Unlock()
+	if err = sf.connect(); err != nil {
+		return
+	}
+	// Send the request
+	sf.Debugf("sending [% x]", aduRequest)
+	//发送数据
+	_, err = sf.port.Write(aduRequest)
+	fun(sf.port)
+	return err
 }
 
 func (sf *RTUClientProvider) Send(p *Protocol) (aduResponse []byte, err error) {
