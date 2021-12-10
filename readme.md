@@ -9,5 +9,23 @@
 
 1. 读请求
 ```go
-ReadRequest(NewAddress("610100000000", BigEndian), 0x00_01_00_00)
+c := go645.NewClient(go645.NewRTUClientProvider(go645.WithEnableLogger(), go645.WithSerialConfig(serial.Config{
+    Address:  "/dev/ttyUSB3",
+    BaudRate: 19200,
+    DataBits: 8,
+    StopBits: 1,
+    Parity:   "E",
+    Timeout:  time.Second * 8,
+})))
+
+for {
+    time.Sleep(time.Second)
+    pr, err := c.Read(go645.NewAddress("3a2107000481", go645.LittleEndian), 0x00_01_00_00)
+    if err != nil {
+        log.Print(err.Error())
+    } else {
+        println(pr.GetValue())
+}
+
+}
 ```

@@ -22,7 +22,6 @@ func main() {
 		pr, err := c.Read(go645.NewAddress("3a2107000481", go645.LittleEndian), 0x00_01_00_00)
 		if err != nil {
 			log.Print(err.Error())
-
 		} else {
 			println(pr.GetValue())
 		}
