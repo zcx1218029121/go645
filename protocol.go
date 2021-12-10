@@ -34,7 +34,7 @@ type (
 	Order              bool
 	InformationElement interface {
 		Encode(buffer *bytes.Buffer) error
-		getLen() byte
+		GetLen() byte
 	}
 
 	//Address 表计地址
@@ -92,7 +92,7 @@ func NewProtocol(address Address, data InformationElement, control *Control) *Pr
 		End:        End,
 		Address:    address,
 		Control:    control,
-		DataLength: data.getLen(),
+		DataLength: data.GetLen(),
 		Data:       data,
 	}
 }
@@ -117,7 +117,7 @@ func (a Address) GetStrAddress(order Order) string {
 	return a.strValue
 }
 
-func (a Address) getLen() byte {
+func (a Address) GetLen() byte {
 	return 6
 }
 
@@ -159,11 +159,11 @@ func (p Protocol) Encode(buffer *bytes.Buffer) error {
 
 }
 
-func (p Protocol) getLen() byte {
+func (p Protocol) GetLen() byte {
 	if p.DataLength != 0 {
 		return p.DataLength
 	}
-	return HeadLen + 4 + p.Data.getLen()
+	return HeadLen + 4 + p.Data.GetLen()
 }
 
 func Bcd2Number(bcd []byte) string {

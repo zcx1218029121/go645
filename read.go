@@ -77,7 +77,7 @@ func (d ReadData) Encode(buffer *bytes.Buffer) error {
 	return nil
 }
 
-func (d ReadData) getLen() byte {
+func (d ReadData) GetLen() byte {
 	if d.rawValue == "" {
 		return 4
 	}
@@ -136,7 +136,7 @@ func (r ReadRequestData) Encode(buffer *bytes.Buffer) error {
 	return err
 }
 
-func (r ReadRequestData) getLen() byte {
+func (r ReadRequestData) GetLen() byte {
 	var dataLen byte = 4
 	if r.withTime {
 		dataLen += 5
