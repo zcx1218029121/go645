@@ -55,7 +55,6 @@ func DecodeAddress(buffer *bytes.Buffer, size int) (Address, error) {
 	return a, nil
 }
 func DecodeData(buffer *bytes.Buffer, size byte) (*ReadData, error) {
-
 	var err error
 	read := func(data interface{}) {
 		if err != nil {
@@ -64,7 +63,7 @@ func DecodeData(buffer *bytes.Buffer, size byte) (*ReadData, error) {
 		err = binary.Read(buffer, binary.LittleEndian, data)
 	}
 	data := new(ReadData)
-	var dataType [4]byte
+	var dataType []byte
 	dataValue := make([]byte, size-4)
 	read(&dataType)
 	for index, item := range dataType {
@@ -110,7 +109,7 @@ func DecodeRead(buffer *bytes.Buffer, size int) InformationElement {
 		err = binary.Read(df, binary.LittleEndian, data)
 	}
 	data := new(ReadData)
-	var dataType [4]byte
+	var dataType []byte
 	dataValue := make([]byte, size-4)
 	read(&dataValue)
 	read(&dataType)

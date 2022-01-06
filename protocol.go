@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -28,6 +29,8 @@ var (
 	_ InformationElement = (*ReadRequestData)(nil)
 
 	_ InformationElement = (*Exception)(nil)
+	_ InformationElement = (*YearDateTimeS)(nil)
+	_ InformationElement = (*DateTime)(nil)
 )
 
 type (
@@ -36,6 +39,22 @@ type (
 	InformationElement interface {
 		Encode(buffer *bytes.Buffer) error
 		GetLen() byte
+	}
+
+	YearDateTimeS struct {
+		ss    byte
+		mm    byte
+		hh    byte
+		day   byte
+		month byte
+		year  byte
+	}
+
+	DateTime struct {
+		mm    byte
+		hh    byte
+		day   byte
+		month byte
 	}
 
 	//Address 表计地址
@@ -64,6 +83,69 @@ type (
 		End byte
 	}
 )
+
+func (t DateTime) Encode(buffer *bytes.Buffer) error {
+	var err error
+	err = binary.Write(buffer, binary.BigEndian, t.mm)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(buffer, binary.BigEndian, t.hh)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(buffer, binary.BigEndian, t.day)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(buffer, binary.BigEndian, t.month)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (t DateTime) GetLen() byte {
+	panic("implement me")
+}
+
+func NewTimeS() *YearDateTimeS {
+	t := time.Now()
+	return &YearDateTimeS{ss: byte(t.Second()), mm: byte(t.Minute()), hh: byte(t.Hour()), day: byte(t.Day()), year: byte(t.Year()), month: byte(t.Month())}
+}
+func (t YearDateTimeS) Encode(buffer *bytes.Buffer) error {
+	var err error
+	err = binary.Write(buffer, binary.BigEndian, t.ss)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(buffer, binary.BigEndian, t.mm)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(buffer, binary.BigEndian, t.hh)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(buffer, binary.BigEndian, t.day)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(buffer, binary.BigEndian, t.month)
+	if err != nil {
+		return err
+	}
+	err = binary.Write(buffer, binary.BigEndian, t.year)
+	if err != nil {
+		return err
+	}
+	return err
+
+}
+
+func (t YearDateTimeS) GetLen() byte {
+	return 6
+}
 
 // NewAddress ，构建设备地址
 // 参数：
@@ -204,8 +286,8 @@ func Hex2Byte(str string) []byte {
 	return bHex
 }
 
-func Int2bytes(data int32) [4]byte {
-	var b3 [4]byte
+func Int2bytes(data int32) []byte {
+	var b3 = make([]byte, 4)
 	b3[0] = uint8(data)
 	b3[1] = uint8(data >> 8)
 	b3[2] = uint8(data >> 16)

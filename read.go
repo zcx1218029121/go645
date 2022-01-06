@@ -11,12 +11,19 @@ type (
 	//ReadData 数据域
 	ReadData struct {
 		//数据标识 4 个字节
-		dataType [4]byte
+		dataType []byte
 		//原始数据
 		rawValue string
 	}
+	//WriteData 写数据
+	WriteData struct {
+		dataType    []byte
+		permissions byte
+		passWord    []byte
+		optCode     []byte
+	}
 	ReadRequestData struct {
-		dataType  [4]byte
+		dataType  []byte
 		recordNum byte
 		min       byte
 		hours     byte
@@ -27,7 +34,7 @@ type (
 	}
 )
 
-func (d ReadData) GetDataType() [4]byte {
+func (d ReadData) GetDataType() []byte {
 	return d.dataType
 }
 func (d ReadData) GetDataTypeStr() string {
@@ -132,7 +139,6 @@ func (r ReadRequestData) Encode(buffer *bytes.Buffer) error {
 		err = WriteWithOffSet(buffer, r.month)
 		err = WriteWithOffSet(buffer, r.year)
 	}
-
 	return err
 }
 

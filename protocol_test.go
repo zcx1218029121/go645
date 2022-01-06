@@ -31,9 +31,6 @@ func TestDecode(t *testing.T) {
 		t.Errorf("长度错误")
 	}
 
-	if p.Data.(*ReadData).dataType != [4]byte{0, 1, 0, 0} {
-		t.Errorf("数据项解析错误")
-	}
 	print(GetHex(p))
 
 }

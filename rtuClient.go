@@ -1,7 +1,6 @@
 package go645
 
 import (
-	"bufio"
 	"bytes"
 	"io"
 	"time"
@@ -14,49 +13,54 @@ type RTUClientProvider struct {
 	logger
 }
 
-//ReadRawFrame 读取Frame 线程不安全
-func (sf *RTUClientProvider) ReadRawFrame() (aduResponse []byte, err error) {
-	return bufio.NewReader(sf.port).ReadSlice(End)
-}
-
-//SendRawFrameNoAck 广播命令不需要返回
-func (sf *RTUClientProvider) SendRawFrameNoAck(aduRequest []byte) (err error) {
-	if err = sf.connect(); err != nil {
-		return
-	}
-	// Send the request
-	sf.Debugf("sending [% x]", aduRequest)
-	//发送数据
-	_, err = sf.port.Write(aduRequest)
-	return err
-}
-
-//SendRawFrameWithHandle 广播命令不需要返回 线程不安全应该
-func (sf *RTUClientProvider) SendRawFrameWithHandle(aduRequest []byte, fun func(io.ReadWriteCloser)) (err error) {
-	sf.mu.Lock()
-	defer sf.mu.Unlock()
-	if err = sf.connect(); err != nil {
-		return
-	}
-	// Send the request
-	sf.Debugf("sending [% x]", aduRequest)
-	//发送数据
-	_, err = sf.port.Write(aduRequest)
-	fun(sf.port)
-	return err
-}
-
-func (sf *RTUClientProvider) Send(p *Protocol) (aduResponse []byte, err error) {
+//SendAndRead 发送数据并读取返回值
+func (sf *RTUClientProvider) SendAndRead(p *Protocol) (aduResponse []byte, err error) {
 	bf := bytes.NewBuffer(make([]byte, 0))
 	err = p.Encode(bf)
 	if err != nil {
 		return nil, err
 	}
+	return sf.SendRawFrameAndRead(bf.Bytes())
+}
+func (sf *RTUClientProvider) Send(p *Protocol) (err error) {
+	bf := bytes.NewBuffer(make([]byte, 0))
+	err = p.Encode(bf)
+	if err != nil {
+		return err
+	}
 	return sf.SendRawFrame(bf.Bytes())
 }
-func (sf *RTUClientProvider) SendRawFrame(aduRequest []byte) (aduResponse []byte, err error) {
+
+//ReadRawFrame 读取返回数据
+func (sf *RTUClientProvider) ReadRawFrame() (aduResponse []byte, err error) {
+	head := make([]byte, 10)
+	size, err := io.ReadAtLeast(sf.port, head, 8)
+	if err != nil || size != 10 {
+		return nil, err
+	}
+	//数据域+2
+	expLen := head[9] + 2
+	playLoad := make([]byte, expLen)
+	if _, err := io.ReadAtLeast(sf.port, playLoad, int(expLen)); err != nil {
+		return nil, err
+	}
+	//拆包器重新实现
+	return append(head, playLoad...), nil
+}
+func (sf *RTUClientProvider) SendRawFrameAndRead(aduRequest []byte) (aduResponse []byte, err error) {
 	sf.mu.Lock()
 	defer sf.mu.Unlock()
+	if err = sf.connect(); err != nil {
+		return
+	}
+	err = sf.SendRawFrame(aduRequest)
+	if err != nil {
+		_ = sf.close()
+		return
+	}
+	return sf.ReadRawFrame()
+}
+func (sf *RTUClientProvider) SendRawFrame(aduRequest []byte) (err error) {
 	if err = sf.connect(); err != nil {
 		return
 	}
@@ -64,13 +68,7 @@ func (sf *RTUClientProvider) SendRawFrame(aduRequest []byte) (aduResponse []byte
 	sf.Debugf("sending [% x]", aduRequest)
 	//发送数据
 	_, err = sf.port.Write(aduRequest)
-	if err != nil {
-		sf.close()
-		return
-	}
-	//读取数据到结束符
-	time.Sleep(sf.calculateDelay(len(aduRequest)))
-	return bufio.NewReader(sf.port).ReadSlice(End)
+	return err
 }
 
 // NewRTUClientProvider allocates and initializes a RTUClientProvider.

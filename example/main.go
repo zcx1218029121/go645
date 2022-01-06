@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/hex"
 	"github.com/goburrow/serial"
 	"github.com/zcx1218029121/go645"
 	"log"
@@ -9,7 +10,7 @@ import (
 
 func main() {
 	c := go645.NewClient(go645.NewRTUClientProvider(go645.WithEnableLogger(), go645.WithSerialConfig(serial.Config{
-		Address:  "/dev/ttyUSB3",
+		Address:  "COM2",
 		BaudRate: 19200,
 		DataBits: 8,
 		StopBits: 1,
@@ -19,18 +20,23 @@ func main() {
 
 	for {
 		time.Sleep(time.Second)
-		pr, ok, err := c.Read(go645.NewAddress("3a2107000481", go645.LittleEndian), 0x00_01_00_00)
+		//广播校时
+		c.Broadcast(go645.NewTimeS(), *go645.NewControl())
+		control := *go645.NewControl()
+		control.SetState(go645.Freeze)
+		c.Broadcast(go645.NewTimeS(), control)
+		pr, hasNext, err := c.Read(go645.NewAddress("59050008193a", go645.BigEndian), 0x00_01_00_00)
 		if err != nil {
 			log.Print(err.Error())
 		} else {
-			if ok {
-				println("有后续")
+			if hasNext {
+				println(hex.EncodeToString(pr.GetDataType()))
+				println(pr.GetValue())
 			} else {
-				log.Print(pr.GetValue())
+				println(hex.EncodeToString(pr.GetDataType()))
+				println(pr.GetValue())
 			}
-
 		}
 
 	}
-
 }

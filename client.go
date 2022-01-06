@@ -16,7 +16,7 @@ type client struct {
 }
 
 func (c *client) Read(address Address, itemCode int32) (*ReadData, bool, error) {
-	resp, err := c.ClientProvider.Send(ReadRequest(address, itemCode))
+	resp, err := c.ClientProvider.SendAndRead(ReadRequest(address, itemCode))
 	if err != nil {
 		return nil, false, err
 	}
@@ -28,19 +28,19 @@ func (c *client) Read(address Address, itemCode int32) (*ReadData, bool, error) 
 }
 
 //Broadcast 设备广播
-func (c *client) Broadcast(p *Protocol) error {
-	p.Address = NewAddress(BroadcastAddress, LittleEndian)
+func (c *client) Broadcast(p InformationElement, control Control) error {
+	control.SetStates(Broadcast)
 	var err error
 	bf := bytes.NewBuffer(make([]byte, 0))
 	err = p.Encode(bf)
 	if err != nil {
 		return err
 	}
-	return nil
+	return c.Send(NewProtocol(NewAddress(BroadcastAddress, LittleEndian), p, NewControl()))
 }
 
 func (c *client) ReadWithBlock(address Address, data ReadRequestData) (*Protocol, error) {
-	resp, err := c.ClientProvider.Send(ReadRequestWithBlock(address, data))
+	resp, err := c.ClientProvider.SendAndRead(ReadRequestWithBlock(address, data))
 	if err != nil {
 		return nil, err
 	}

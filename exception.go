@@ -20,7 +20,7 @@ func (e Exception) Encode(buffer *bytes.Buffer) error {
 	return binary.Write(buffer, binary.LittleEndian, e.Err+0x33)
 }
 
-//错误响应报文长度2
+//GetLen 错误响应报文长度2
 func (e Exception) GetLen() byte {
 	return 2
 }
