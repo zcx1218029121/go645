@@ -18,6 +18,10 @@ func main() {
 		Timeout:  time.Second * 8,
 	})))
 
+	go func() {
+		time.Sleep(1 * time.Minute)
+	}()
+
 	for {
 		time.Sleep(time.Second)
 		//广播校时

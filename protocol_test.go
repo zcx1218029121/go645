@@ -51,6 +51,7 @@ func TestRead(t *testing.T) {
 	p.Data.(*ReadData).GetDataTypeStr()
 	p.Data.(*ReadData).GetDataType()
 	Assert("状态解析错误", func() bool { return p.Control.IsState(Read) }, t)
+	p.Data.(*ReadData).GetFloat64Value()
 	AssertEquest("数据项解析错误", p.Data.(*ReadData).dataType, p2.Data.(*ReadData).dataType, t)
 	AssertEquest("校验码解析错误", p.CS, p2.CS, t)
 }
