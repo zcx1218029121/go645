@@ -11,6 +11,9 @@ type Decoder func(buffer *bytes.Buffer) (*InformationElement, error)
 
 func Handler(control *Control, buffer *bytes.Buffer, size byte) (InformationElement, error) {
 	//从站响应异常响应
+	if control == nil {
+		return nil, errors.New("未知错误")
+	}
 	if control.IsState(SlaveErr) {
 		return nil, DecodeException(buffer)
 	}
@@ -114,7 +117,7 @@ func DecodeRead(buffer *bytes.Buffer, size int) InformationElement {
 		err = binary.Read(df, binary.LittleEndian, data)
 	}
 	data := new(ReadData)
-	var dataType []byte
+	var dataType = make([]byte, 4)
 	dataValue := make([]byte, size-4)
 	read(&dataValue)
 	read(&dataType)
