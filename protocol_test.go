@@ -100,15 +100,11 @@ func AssertState(assert func() bool, t *testing.T) {
 	Assert("状态解析错误", assert, t)
 }
 func TestControl_IsState(t *testing.T) {
-	c := new(Control)
-	c.SetState(SlaveErr)
-	if !c.IsStates(SlaveErr) {
-		t.Errorf("设置状态错误")
-	}
-	c.Reset()
-	if c.IsStates(SlaveErr) {
-		t.Errorf("复归错误")
-	}
+	d := NewControlValue(0x0A)
+	println(d.IsStates(IsSlave))
+	println(d.IsStates(Broadcast))
+	println(d.IsStates(Read))
+
 }
 func TestControl(t *testing.T) {
 	c := &Control{}

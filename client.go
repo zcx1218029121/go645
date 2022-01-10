@@ -29,14 +29,13 @@ func (c *client) Read(address Address, itemCode int32) (*ReadData, bool, error) 
 
 //Broadcast 设备广播
 func (c *client) Broadcast(p InformationElement, control Control) error {
-	control.SetStates(Broadcast)
 	var err error
 	bf := bytes.NewBuffer(make([]byte, 0))
 	err = p.Encode(bf)
 	if err != nil {
 		return err
 	}
-	return c.Send(NewProtocol(NewAddress(BroadcastAddress, LittleEndian), p, NewControl()))
+	return c.Send(NewProtocol(NewAddress(BroadcastAddress, LittleEndian), p, &control))
 }
 
 func (c *client) ReadWithBlock(address Address, data ReadRequestData) (*Protocol, error) {

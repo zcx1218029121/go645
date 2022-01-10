@@ -31,6 +31,7 @@ var (
 	_ InformationElement = (*Exception)(nil)
 	_ InformationElement = (*YearDateTimeS)(nil)
 	_ InformationElement = (*DateTime)(nil)
+	_ InformationElement = (*NullData)(nil)
 )
 
 type (
@@ -39,6 +40,8 @@ type (
 	InformationElement interface {
 		Encode(buffer *bytes.Buffer) error
 		GetLen() byte
+	}
+	NullData struct {
 	}
 
 	YearDateTimeS struct {
@@ -83,6 +86,14 @@ type (
 		End byte
 	}
 )
+
+func (n NullData) Encode(buffer *bytes.Buffer) error {
+	return nil
+}
+
+func (n NullData) GetLen() byte {
+	return 0
+}
 
 func (t DateTime) Encode(buffer *bytes.Buffer) error {
 	var err error

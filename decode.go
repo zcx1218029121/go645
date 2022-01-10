@@ -3,6 +3,7 @@ package go645
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"log"
 )
 
@@ -17,7 +18,11 @@ func Handler(control *Control, buffer *bytes.Buffer, size byte) (InformationElem
 	if control.IsState(Read) {
 		return DecodeRead(buffer, int(size)), nil
 	}
-	panic("没有定义的数据类型")
+	//佳和强制联机
+	if control.Data == 0x8a {
+		return DecodeNullData(buffer), nil
+	}
+	return nil, errors.New("未定义的数据类型")
 }
 func Decode(buffer *bytes.Buffer) (*Protocol, error) {
 	var err error
@@ -37,7 +42,7 @@ func Decode(buffer *bytes.Buffer) (*Protocol, error) {
 	read(&p.CS)
 	read(&p.End)
 	if err != nil {
-		return nil, err
+		log.Print(err.Error())
 	}
 	return p, nil
 }
@@ -126,4 +131,7 @@ func DecodeException(buffer *bytes.Buffer) error {
 		return nil
 	}
 	return &Exception{data}
+}
+func DecodeNullData(*bytes.Buffer) InformationElement {
+	return NullData{}
 }
