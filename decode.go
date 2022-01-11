@@ -47,7 +47,7 @@ func Decode(buffer *bytes.Buffer) (*Protocol, error) {
 	if err != nil {
 		log.Print(err.Error())
 	}
-	return p, nil
+	return p, err
 }
 func DecodeAddress(buffer *bytes.Buffer, size int) (Address, error) {
 	var a Address

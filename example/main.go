@@ -13,7 +13,7 @@ import (
 var device sync.Map
 var mu sync.Mutex
 
-//佳和电表解析 同步
+//特殊电表解析 同步
 func main() {
 	var size int
 	flag.IntVar(&size, "s", 1, "电表数量")
