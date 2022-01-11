@@ -1,51 +1,90 @@
 package main
 
-//佳和电表解析
-//因为 广播强制连接不知道什么时候返回 佳和电表解析是读写分离的
-//但是对单一的设备还是要加锁
-//不建议使用
 import (
+	"bytes"
+	"flag"
 	"github.com/goburrow/serial"
 	"github.com/zcx1218029121/go645"
+	"io"
 	"log"
 	"sync"
 	"time"
 )
 
+var device sync.Map
+var mu sync.Mutex
+
+var _ go645.PrefixHandler = (*Handler)(nil)
+
 type Handler struct {
-	go645.EventHandler
-	DeviceMap sync.Map
 }
 
-func (handler *Handler) ForceOnlineResp(client go645.Client, address go645.Address, data go645.InformationElement) error {
-	handler.DeviceMap.Store(address.GetStrAddress(go645.LittleEndian), nil)
-	return nil
-}
-func (handler *Handler) ReadDataResp(client go645.Client, address go645.Address, data *go645.ReadData) error {
-	log.Printf("rec read %s", data.GetFloat64Value())
+func (h Handler) EncodePrefix(buffer *bytes.Buffer) error {
+	// 写入的时候不需要引导词
 	return nil
 }
 
-//佳和645协议解析
+func (h Handler) DecodePrefix(reader io.Reader) ([]byte, error) {
+	// 读取的时候不需要引导词
+	return nil, nil
+}
+
+//特殊电表解析 同步
 func main() {
-	handler := &Handler{}
-	c := go645.NewGaeaClient(go645.NewClient(go645.NewRTUClientProvider(go645.WithEnableLogger(), go645.WithSerialConfig(serial.Config{
-		Address:  "/dev/ttyS1",
-		BaudRate: 19200,
-		DataBits: 8,
-		StopBits: 1,
-		Parity:   "E",
-		Timeout:  time.Second * 8,
-	}))))
+	var b int
+	var code int
+	//1200、2400、4800、9600
+	flag.IntVar(&b, "b", 19200, "波特率")
+	flag.IntVar(&code, "c", 0x00_03_00_00, "波特率")
+	flag.Parse()
+	p := go645.NewRTUClientProvider(go645.WithSerialConfig(serial.Config{Address: "/dev/ttyS1", BaudRate: b, DataBits: 8, StopBits: 1, Parity: "E", Timeout: time.Second * 30}), go645.WithEnableLogger(), go645.WithPrefixHandler(&Handler{}))
+	c := go645.NewClient(p)
+	c.Connect()
+	defer c.Close()
+
+	forceOnline(c)
+
 	go func() {
-		for {
-			c.ForceOnline()
-			//遍历联机到的表地址 发送读请求
-			handler.DeviceMap.Range(func(key, value interface{}) bool {
-				c.ReadAsy(go645.NewAddress(key.(string), go645.LittleEndian), 0x00_01_00_00)
-				return false
-			})
-		}
+		time.Sleep(1 * time.Minute)
+		forceOnline(c)
 	}()
-	c.Start(handler)
+
+	for {
+		//如果对扫描速度不是要求很高 需要重新扫描
+		time.Sleep(50 * time.Millisecond)
+
+		device.Range(func(key, value interface{}) bool {
+			func() {
+				mu.Lock()
+				defer mu.Unlock()
+				read, _, err := c.Read(go645.NewAddress(key.(string), go645.LittleEndian), 0x00_01_00_00)
+				if err == nil {
+					log.Printf("rec %f", read.GetFloat64Value())
+				}
+			}()
+			return false
+		})
+	}
+
+}
+func forceOnline(c go645.Client) {
+	c.Broadcast(go645.NullData{}, *go645.NewControlValue(0x0a))
+	mu.Lock()
+	defer mu.Unlock()
+	for {
+
+		frame, err := c.ReadRawFrame()
+		if err != nil {
+			log.Printf(err.Error())
+			return
+		}
+		if frame != nil && len(frame) > 10 {
+			p, err := go645.Decode(bytes.NewBuffer(frame))
+			if err != nil {
+				log.Printf(err.Error())
+				return
+			}
+			device.Store(p.Address.GetStrAddress(go645.LittleEndian), nil)
+		}
+	}
 }

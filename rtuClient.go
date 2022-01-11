@@ -3,6 +3,7 @@ package go645
 import (
 	"bytes"
 	"io"
+	"log"
 	"time"
 )
 
@@ -11,11 +12,21 @@ var _ ClientProvider = (*RTUClientProvider)(nil)
 type RTUClientProvider struct {
 	serialPort
 	logger
+	PrefixHandler PrefixHandler
+}
+
+func (sf *RTUClientProvider) setPrefixHandler(handler PrefixHandler) {
+	sf.PrefixHandler = handler
 }
 
 //SendAndRead 发送数据并读取返回值
 func (sf *RTUClientProvider) SendAndRead(p *Protocol) (aduResponse []byte, err error) {
 	bf := bytes.NewBuffer(make([]byte, 0))
+	err = sf.PrefixHandler.EncodePrefix(bf)
+	if err != nil {
+		return nil, err
+	}
+
 	err = p.Encode(bf)
 	if err != nil {
 		return nil, err
@@ -24,6 +35,10 @@ func (sf *RTUClientProvider) SendAndRead(p *Protocol) (aduResponse []byte, err e
 }
 func (sf *RTUClientProvider) Send(p *Protocol) (err error) {
 	bf := bytes.NewBuffer(make([]byte, 0))
+	err = sf.PrefixHandler.EncodePrefix(bf)
+	if err != nil {
+		return err
+	}
 	err = p.Encode(bf)
 	if err != nil {
 		return err
@@ -33,8 +48,13 @@ func (sf *RTUClientProvider) Send(p *Protocol) (err error) {
 
 //ReadRawFrame 读取返回数据
 func (sf *RTUClientProvider) ReadRawFrame() (aduResponse []byte, err error) {
+	fe, err := sf.PrefixHandler.DecodePrefix(sf.port)
+	if err != nil {
+		log.Printf(err.Error())
+		return nil, err
+	}
 	head := make([]byte, 10)
-	size, err := io.ReadAtLeast(sf.port, head, 8)
+	size, err := io.ReadAtLeast(sf.port, head, 10)
 	if err != nil || size != 10 {
 		return nil, err
 	}
@@ -45,7 +65,9 @@ func (sf *RTUClientProvider) ReadRawFrame() (aduResponse []byte, err error) {
 		return nil, err
 	}
 	//拆包器重新实现
-	return append(head, playLoad...), nil
+	content := append(head, playLoad...)
+	sf.Debugf("rec <==[% x]", append(fe, content...))
+	return content, nil
 }
 func (sf *RTUClientProvider) SendRawFrameAndRead(aduRequest []byte) (aduResponse []byte, err error) {
 	sf.mu.Lock()
@@ -55,6 +77,7 @@ func (sf *RTUClientProvider) SendRawFrameAndRead(aduRequest []byte) (aduResponse
 	}
 	err = sf.SendRawFrame(aduRequest)
 	if err != nil {
+		log.Printf(err.Error())
 		_ = sf.close()
 		return
 	}
@@ -65,7 +88,7 @@ func (sf *RTUClientProvider) SendRawFrame(aduRequest []byte) (err error) {
 		return
 	}
 	// Send the request
-	sf.Debugf("sending [% x]", aduRequest)
+	sf.Debugf("sending ==> [% x]", aduRequest)
 	//发送数据
 	_, err = sf.port.Write(aduRequest)
 	return err
@@ -75,8 +98,7 @@ func (sf *RTUClientProvider) SendRawFrame(aduRequest []byte) (err error) {
 // it will use default /dev/ttyS0 19200 8 1 N and timeout 1000
 func NewRTUClientProvider(opts ...ClientProviderOption) *RTUClientProvider {
 	p := &RTUClientProvider{
-		logger: newLogger("modbusRTUMaster => "),
-		//pool:   rtuPool,
+		logger: newLogger("645RTUMaster => "),
 	}
 	for _, opt := range opts {
 		opt(p)

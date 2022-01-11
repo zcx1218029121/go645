@@ -15,6 +15,8 @@ type ClientProvider interface {
 	// Close disconnect the remote server
 	Close() error
 	setSerialConfig(config serial.Config)
+
+	setPrefixHandler(handler PrefixHandler)
 	// setTCPTimeout set tcp connect & read timeout
 	setTCPTimeout(t time.Duration)
 	setLogProvider(p LogProvider)
