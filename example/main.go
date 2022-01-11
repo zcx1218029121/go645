@@ -30,6 +30,10 @@ func main() {
 		forceOnline(c)
 	}()
 
+	go func() {
+		time.Sleep(1 * time.Minute)
+	}()
+
 	for {
 		//如果对扫描速度不是要求很高 需要重新扫描
 		time.Sleep(50 * time.Millisecond)
