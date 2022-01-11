@@ -35,7 +35,7 @@ func main() {
 	var code int
 	//1200、2400、4800、9600
 	flag.IntVar(&b, "b", 19200, "波特率")
-	flag.IntVar(&code, "c", 0x00_03_00_00, "波特率")
+	flag.IntVar(&code, "c", 0x00_03_00_00, "特征码")
 	flag.Parse()
 	p := go645.NewRTUClientProvider(go645.WithSerialConfig(serial.Config{Address: "/dev/ttyS1", BaudRate: b, DataBits: 8, StopBits: 1, Parity: "E", Timeout: time.Second * 30}), go645.WithEnableLogger(), go645.WithPrefixHandler(&Handler{}))
 	c := go645.NewClient(p)
