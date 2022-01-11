@@ -31,9 +31,6 @@ func TestDecode(t *testing.T) {
 		t.Errorf("长度错误")
 	}
 
-	if p.Data.(*ReadData).dataType != [4]byte{0, 1, 0, 0} {
-		t.Errorf("数据项解析错误")
-	}
 	print(GetHex(p))
 
 }
@@ -54,6 +51,7 @@ func TestRead(t *testing.T) {
 	p.Data.(*ReadData).GetDataTypeStr()
 	p.Data.(*ReadData).GetDataType()
 	Assert("状态解析错误", func() bool { return p.Control.IsState(Read) }, t)
+	p.Data.(*ReadData).GetFloat64Value()
 	AssertEquest("数据项解析错误", p.Data.(*ReadData).dataType, p2.Data.(*ReadData).dataType, t)
 	AssertEquest("校验码解析错误", p.CS, p2.CS, t)
 }
@@ -103,15 +101,11 @@ func AssertState(assert func() bool, t *testing.T) {
 	Assert("状态解析错误", assert, t)
 }
 func TestControl_IsState(t *testing.T) {
-	c := new(Control)
-	c.SetState(SlaveErr)
-	if !c.IsStates(SlaveErr) {
-		t.Errorf("设置状态错误")
-	}
-	c.Reset()
-	if c.IsStates(SlaveErr) {
-		t.Errorf("复归错误")
-	}
+	d := NewControlValue(0x0A)
+	println(d.IsStates(IsSlave))
+	println(d.IsStates(Broadcast))
+	println(d.IsStates(Read))
+
 }
 func TestControl(t *testing.T) {
 	c := &Control{}

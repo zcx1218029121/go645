@@ -15,16 +15,16 @@ type ClientProvider interface {
 	// Close disconnect the remote server
 	Close() error
 	setSerialConfig(config serial.Config)
+
+	setPrefixHandler(handler PrefixHandler)
 	// setTCPTimeout set tcp connect & read timeout
 	setTCPTimeout(t time.Duration)
-
 	setLogProvider(p LogProvider)
-	Send(*Protocol) (aduResponse []byte, err error)
-	SendRawFrame(aduRequest []byte) (aduResponse []byte, err error)
-
-	//SendRawFrameNoAck 广播命令不需要返回码
-	SendRawFrameNoAck(aduRequest []byte) (err error)
+	SendAndRead(*Protocol) (aduResponse []byte, err error)
+	SendRawFrameAndRead(aduRequest []byte) (aduResponse []byte, err error)
+	SendRawFrame(aduRequest []byte) (err error)
 	ReadRawFrame() (aduResponse []byte, err error)
+	Send(*Protocol) (err error)
 }
 
 // LogProvider  log message levels only Debug and Error

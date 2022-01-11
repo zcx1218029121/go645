@@ -5,18 +5,31 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"strconv"
+	"time"
 )
 
 type (
+	ReadDataWithTime struct {
+		ReadData
+		value float64
+		time  time.Time
+	}
 	//ReadData 数据域
 	ReadData struct {
 		//数据标识 4 个字节
-		dataType [4]byte
+		dataType []byte
 		//原始数据
 		rawValue string
 	}
+	//WriteData 写数据
+	WriteData struct {
+		dataType    []byte
+		permissions byte
+		passWord    []byte
+		optCode     []byte
+	}
 	ReadRequestData struct {
-		dataType  [4]byte
+		dataType  []byte
 		recordNum byte
 		min       byte
 		hours     byte
@@ -27,7 +40,7 @@ type (
 	}
 )
 
-func (d ReadData) GetDataType() [4]byte {
+func (d ReadData) GetDataType() []byte {
 	return d.dataType
 }
 func (d ReadData) GetDataTypeStr() string {
@@ -38,12 +51,123 @@ func (d ReadData) GetDataTypeStr() string {
 	}
 	return hex.EncodeToString(a)
 }
+func (d *ReadData) GetFloat64ValueWithTime() *ReadDataWithTime {
+	if d.dataType[3] == 0x01 {
+		_, _ = strconv.Atoi(d.rawValue[:6])
 
+	}
+	return nil
+}
 func (d *ReadData) GetFloat64Value() float64 {
-	if d.dataType[0] == 0x00 || d.dataType[0] == 0x0c {
+	if d.dataType[3] == 0x00 {
 		value, _ := strconv.Atoi(d.rawValue)
 		return float64(value) * 0.01
-	} else if d.dataType[3] == 0x02 {
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x03 && d.dataType[0] == 0 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.0001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x04 && d.dataType[0] == 0 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.0001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x05 && d.dataType[0] == 0 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.0001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x06 && d.dataType[0] == 0 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x05 && d.dataType[0] == 0 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.0001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x06 && d.dataType[0] == 0 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x07 && d.dataType[0] == 0 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.1
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x08 && d.dataType[0] == 0 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x09 && d.dataType[0] == 0 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x0A && d.dataType[1] == 0x01 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x0A && d.dataType[1] == 0x02 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x0A && d.dataType[1] == 0x03 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x0B && d.dataType[1] == 0x01 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x0B && d.dataType[1] == 0x02 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x0B && d.dataType[1] == 0x03 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x01 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x02 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x03 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x04 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x05 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x06 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.001
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x07 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.1
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x08 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x09 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x09 {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value) * 0.01
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x0A {
+		value, _ := strconv.Atoi(d.rawValue)
+		return float64(value)
+	}
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x0B {
 		value, _ := strconv.Atoi(d.rawValue)
 		return float64(value) * 0.0001
 	}
@@ -132,7 +256,6 @@ func (r ReadRequestData) Encode(buffer *bytes.Buffer) error {
 		err = WriteWithOffSet(buffer, r.month)
 		err = WriteWithOffSet(buffer, r.year)
 	}
-
 	return err
 }
 

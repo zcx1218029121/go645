@@ -9,6 +9,7 @@ import (
 
 type ControlType byte
 
+//01010
 const (
 	IsSlave  ControlType = 1 << 7
 	SlaveErr ControlType = 1 << 6
@@ -51,6 +52,9 @@ func DecodeControl(buffer *bytes.Buffer) (*Control, error) {
 }
 func NewControl() *Control {
 	return &Control{Data: 0}
+}
+func NewControlValue(data ControlType) *Control {
+	return &Control{Data: data}
 }
 
 func (c *Control) SetState(state ControlType) {

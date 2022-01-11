@@ -30,6 +30,12 @@ func WithSerialConfig(config serial.Config) ClientProviderOption {
 	}
 }
 
+func WithPrefixHandler(prefixHandler PrefixHandler) ClientProviderOption {
+	return func(p ClientProvider) {
+		p.setPrefixHandler(prefixHandler)
+	}
+}
+
 // WithTCPTimeout set tcp Connect & Read timeout, only valid on TCP.
 func WithTCPTimeout(t time.Duration) ClientProviderOption {
 	return func(p ClientProvider) {

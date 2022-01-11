@@ -3,6 +3,7 @@ package go645
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"log"
 )
 
@@ -10,6 +11,9 @@ type Decoder func(buffer *bytes.Buffer) (*InformationElement, error)
 
 func Handler(control *Control, buffer *bytes.Buffer, size byte) (InformationElement, error) {
 	//从站响应异常响应
+	if control == nil {
+		return nil, errors.New("未知错误")
+	}
 	if control.IsState(SlaveErr) {
 		return nil, DecodeException(buffer)
 	}
@@ -17,7 +21,11 @@ func Handler(control *Control, buffer *bytes.Buffer, size byte) (InformationElem
 	if control.IsState(Read) {
 		return DecodeRead(buffer, int(size)), nil
 	}
-	panic("没有定义的数据类型")
+	//佳和强制联机
+	if control.Data == 0x8a {
+		return DecodeNullData(buffer), nil
+	}
+	return nil, errors.New("未定义的数据类型")
 }
 func Decode(buffer *bytes.Buffer) (*Protocol, error) {
 	var err error
@@ -37,9 +45,9 @@ func Decode(buffer *bytes.Buffer) (*Protocol, error) {
 	read(&p.CS)
 	read(&p.End)
 	if err != nil {
-		return nil, err
+		log.Print(err.Error())
 	}
-	return p, nil
+	return p, err
 }
 func DecodeAddress(buffer *bytes.Buffer, size int) (Address, error) {
 	var a Address
@@ -55,7 +63,6 @@ func DecodeAddress(buffer *bytes.Buffer, size int) (Address, error) {
 	return a, nil
 }
 func DecodeData(buffer *bytes.Buffer, size byte) (*ReadData, error) {
-
 	var err error
 	read := func(data interface{}) {
 		if err != nil {
@@ -64,7 +71,7 @@ func DecodeData(buffer *bytes.Buffer, size byte) (*ReadData, error) {
 		err = binary.Read(buffer, binary.LittleEndian, data)
 	}
 	data := new(ReadData)
-	var dataType [4]byte
+	var dataType []byte
 	dataValue := make([]byte, size-4)
 	read(&dataType)
 	for index, item := range dataType {
@@ -110,7 +117,7 @@ func DecodeRead(buffer *bytes.Buffer, size int) InformationElement {
 		err = binary.Read(df, binary.LittleEndian, data)
 	}
 	data := new(ReadData)
-	var dataType [4]byte
+	var dataType = make([]byte, 4)
 	dataValue := make([]byte, size-4)
 	read(&dataValue)
 	read(&dataType)
@@ -127,4 +134,7 @@ func DecodeException(buffer *bytes.Buffer) error {
 		return nil
 	}
 	return &Exception{data}
+}
+func DecodeNullData(*bytes.Buffer) InformationElement {
+	return NullData{}
 }
