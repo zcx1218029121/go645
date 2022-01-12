@@ -1,6 +1,6 @@
 # 快速开始
 
-## 安装
+### 安装
 
 ```shell
     go get github.com/zcx1218029121/go645
