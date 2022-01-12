@@ -21,7 +21,15 @@ func main() {
 	flag.IntVar(&b, "b", 19200, "波特率")
 	flag.IntVar(&code, "c", 0x00_03_00_00, "特征码")
 	flag.Parse()
-	p := go645.NewRTUClientProvider(go645.WithSerialConfig(serial.Config{Address: "COM2", BaudRate: b, DataBits: 8, StopBits: 1, Parity: "E", Timeout: time.Second * 30}), go645.WithEnableLogger())
+	p := go645.NewRTUClientProvider(
+		go645.WithSerialConfig(serial.Config{
+			Address:  "COM2",
+			BaudRate: b,
+			DataBits: 8,
+			StopBits: 1,
+			Parity:   "E",
+			Timeout:  time.Second * 30}),
+		go645.WithEnableLogger())
 	c := go645.NewClient(p)
 	err := c.Connect()
 	if err != nil {
