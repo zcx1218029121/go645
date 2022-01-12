@@ -1,7 +1,16 @@
 # go dlt645-2007
 
+
+
+
 <img src="https://img.shields.io/github/stars/zcx1218029121/go645?style=social"/>
-see https://zcx1218029121.github.io/go645/#/
+
+
+
+快速开始 https://zcx1218029121.github.io/go645/#/
+
+
+
 用go语言实现的dlt645解析
 ```shell
     go get github.com/zcx1218029121/go645
