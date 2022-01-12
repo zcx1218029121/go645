@@ -17,7 +17,7 @@ type Handler struct {
 
 func (h Handler) EncodePrefix(buffer *bytes.Buffer) error {
 	// 百富电表写入的时候不需要引导词
-	//buffer.Write([]byte{0xfe, 0xfe, 0xfe, 0xfe})
+	buffer.Write([]byte{0xfe, 0xfe, 0xfe, 0xfe})
 	return nil
 }
 
@@ -37,9 +37,12 @@ func main() {
 	flag.IntVar(&b, "b", 2400, "波特率")
 	flag.IntVar(&code, "c", 0x00_03_00_00, "波特率")
 	flag.Parse()
-	p := go645.NewRTUClientProvider(go645.WithSerialConfig(serial.Config{Address: "/dev/ttyUSB2", BaudRate: b, DataBits: 8, StopBits: 1, Parity: "E", Timeout: time.Second * 30}), go645.WithEnableLogger(), go645.WithPrefixHandler(&Handler{}))
+	p := go645.NewRTUClientProvider(go645.WithSerialConfig(serial.Config{Address: "COM2", BaudRate: b, DataBits: 8, StopBits: 1, Parity: "E", Timeout: time.Second * 30}), go645.WithEnableLogger(), go645.WithPrefixHandler(&Handler{}))
 	c := go645.NewClient(p)
-	c.Connect()
+	err := c.Connect()
+	if err != nil {
+		panic(err)
+	}
 	defer c.Close()
 	for {
 		time.Sleep(50 * time.Millisecond)

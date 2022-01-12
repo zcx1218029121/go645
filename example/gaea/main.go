@@ -5,7 +5,6 @@ import (
 	"flag"
 	"github.com/goburrow/serial"
 	"github.com/zcx1218029121/go645"
-	"io"
 	"log"
 	"sync"
 	"time"
@@ -13,21 +12,6 @@ import (
 
 var device sync.Map
 var mu sync.Mutex
-
-var _ go645.PrefixHandler = (*Handler)(nil)
-
-type Handler struct {
-}
-
-func (h Handler) EncodePrefix(buffer *bytes.Buffer) error {
-	// 写入的时候不需要引导词
-	return nil
-}
-
-func (h Handler) DecodePrefix(reader io.Reader) ([]byte, error) {
-	// 读取的时候不需要引导词
-	return nil, nil
-}
 
 //特殊电表解析 同步
 func main() {
@@ -37,9 +21,15 @@ func main() {
 	flag.IntVar(&b, "b", 19200, "波特率")
 	flag.IntVar(&code, "c", 0x00_03_00_00, "特征码")
 	flag.Parse()
-	p := go645.NewRTUClientProvider(go645.WithSerialConfig(serial.Config{Address: "/dev/ttyS1", BaudRate: b, DataBits: 8, StopBits: 1, Parity: "E", Timeout: time.Second * 30}), go645.WithEnableLogger(), go645.WithPrefixHandler(&Handler{}))
+	p := go645.NewRTUClientProvider(go645.WithSerialConfig(serial.Config{Address: "COM2", BaudRate: b, DataBits: 8, StopBits: 1, Parity: "E", Timeout: time.Second * 30}), go645.WithEnableLogger())
 	c := go645.NewClient(p)
-	c.Connect()
+	err := c.Connect()
+	if err != nil {
+		panic(err)
+	}
+	if err != nil {
+		return
+	}
 	defer c.Close()
 
 	forceOnline(c)
