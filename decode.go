@@ -101,7 +101,7 @@ func DecoderData(buffer *bytes.Buffer, size int) (*bytes.Buffer, error) {
 	}
 	var value = make([]byte, size)
 	read(value)
-	for i, j := 0, len(value)-1; i < j; i, j = i+1, j-1 {
+	for i, j := 0, len(value)-1; i <= j; i, j = i+1, j-1 {
 		value[i], value[j] = value[j]-0x33, value[i]-0x33
 	}
 
