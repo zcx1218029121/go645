@@ -19,11 +19,11 @@ func main() {
 	var code int
 	//1200、2400、4800、9600
 	flag.IntVar(&b, "b", 19200, "波特率")
-	flag.IntVar(&code, "c", 0x00_03_00_00, "特征码")
+	flag.IntVar(&code, "c", 0x02_04_00_00, "特征码")
 	flag.Parse()
 	p := go645.NewRTUClientProvider(
 		go645.WithSerialConfig(serial.Config{
-			Address:  "COM2",
+			Address:  "/dev/ttyUSB3",
 			BaudRate: b,
 			DataBits: 8,
 			StopBits: 1,
@@ -55,9 +55,9 @@ func main() {
 			func() {
 				mu.Lock()
 				defer mu.Unlock()
-				read, _, err := c.Read(go645.NewAddress(key.(string), go645.LittleEndian), 0x00_01_00_00)
+				read, _, err := c.Read(go645.NewAddress(key.(string), go645.LittleEndian), int32(code))
 				if err == nil {
-					log.Printf("rec %f", read.GetFloat64Value())
+					log.Printf("address %s :rec %f", key.(string), read.GetFloat64Value())
 				}
 			}()
 			return false

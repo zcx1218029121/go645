@@ -59,17 +59,30 @@ func (d *ReadData) GetFloat64ValueWithTime() *ReadDataWithTime {
 	return nil
 }
 func (d *ReadData) GetFloat64Value() float64 {
+	for i, j := 0, len(d.dataType)-1; i < j; i, j = i+1, j-1 {
+		d.dataType[j], d.dataType[i] = d.dataType[i], d.dataType[j]
+	}
 	if d.dataType[3] == 0x00 {
 		value, _ := strconv.Atoi(d.rawValue)
 		return float64(value) * 0.01
 	}
 	if d.dataType[3] == 0x02 && d.dataType[2] == 0x03 && d.dataType[0] == 0 {
 		value, _ := strconv.Atoi(d.rawValue)
-		return float64(value) * 0.0001
+		data := float64(value) * 0.0001
+		if data > 80 {
+			return (data - 80) * -1
+		} else {
+			return data
+		}
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x04 && d.dataType[0] == 0 {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x04 {
 		value, _ := strconv.Atoi(d.rawValue)
-		return float64(value) * 0.0001
+		data := float64(value) * 0.0001
+		if data > 80 {
+			return (data - 80) * -1
+		} else {
+			return data
+		}
 	}
 	if d.dataType[3] == 0x02 && d.dataType[2] == 0x05 && d.dataType[0] == 0 {
 		value, _ := strconv.Atoi(d.rawValue)

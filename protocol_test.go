@@ -37,23 +37,18 @@ func TestDecode(t *testing.T) {
 
 //TestRead 测试解析读请求
 func TestRead(t *testing.T) {
-	str := "68610100000000681104333334331416"
+	str := "6812040007213a689107333337358336b31e16"
 	data := make([]byte, 0)
 	c := NewControl()
 	c.SetState(Read)
 	r := ReadRequest(NewAddress("610100000000", BigEndian), 0x00_01_00_00)
 	bf := bytes.NewBuffer(data)
 	_ = r.Encode(bf)
-
 	decodeString, _ := hex.DecodeString(str)
 	p2, _ := Decode(bytes.NewBuffer(decodeString))
-	p, _ := Decode(bf)
-	p.Data.(*ReadData).GetDataTypeStr()
-	p.Data.(*ReadData).GetDataType()
-	Assert("状态解析错误", func() bool { return p.Control.IsState(Read) }, t)
-	p.Data.(*ReadData).GetFloat64Value()
-	AssertEquest("数据项解析错误", p.Data.(*ReadData).dataType, p2.Data.(*ReadData).dataType, t)
-	AssertEquest("校验码解析错误", p.CS, p2.CS, t)
+	print(p2.Data.(*ReadData).GetValue() + "\n")
+	print(p2.Data.(*ReadData).GetDataTypeStr() + "\n")
+	fmt.Printf("%f", p2.Data.(*ReadData).GetFloat64Value())
 }
 
 //TestSend 测试发送

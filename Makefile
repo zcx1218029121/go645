@@ -10,7 +10,7 @@ all: ${ARM} ${MAC} ${WIN}
 
 ${ARM}:
 	@echo "============ [${ARM}] 开始编译  =========="
-	GOOS=linux GOARCH=arm go build -o ${OUTPUT}_${ARM}   ./example/main.go
+	GOOS=linux GOARCH=arm go build -o ${OUTPUT}_${ARM}   ./example/gaea/main.go
 	@echo "============[${ARM}] 编译结束============"
 ${MAC}:
 	@echo "============ [${MAC}] 开始编译  ============"
