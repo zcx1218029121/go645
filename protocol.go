@@ -176,7 +176,7 @@ func NewAddress(address string, order Order) Address {
 }
 
 func NewReadData(dataType int32, value string) ReadData {
-	return ReadData{dataType: Int2bytes(dataType), rawValue: value}
+	return ReadData{dataType: Int2bytes(dataType), bcdValue: value}
 }
 
 func NewProtocol(address Address, data InformationElement, control *Control) *Protocol {
