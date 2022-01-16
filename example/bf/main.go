@@ -16,7 +16,6 @@ type Handler struct {
 }
 
 func (h Handler) EncodePrefix(buffer *bytes.Buffer) error {
-	// 百富电表写入的时候不需要引导词
 	buffer.Write([]byte{0xfe, 0xfe, 0xfe, 0xfe})
 	return nil
 }
