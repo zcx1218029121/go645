@@ -26,18 +26,16 @@ func TestDecode(t *testing.T) {
 	if !p.Control.IsState(IsSlave) || !p.Control.IsState(Read) {
 		t.Errorf("状态解析错误")
 	}
-	println(p.Data.(*ReadData).GetFloat64Value())
+	fmt.Printf("%f \n", p.Data.(*ReadData).GetFloat64Value())
 	if p.GetLen() != 0x08 {
 		t.Errorf("长度错误")
 	}
-
-	print(GetHex(p))
 
 }
 
 //TestRead 测试解析读请求
 func TestRead(t *testing.T) {
-	str := "6812040007213a689107333337358336b31e16"
+	str := "6881040007213a68910733353535333333ba16"
 	data := make([]byte, 0)
 	c := NewControl()
 	c.SetState(Read)

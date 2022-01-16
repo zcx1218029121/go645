@@ -74,6 +74,9 @@ func DecodeData(buffer *bytes.Buffer, size byte) (*ReadData, error) {
 	var dataType []byte
 	dataValue := make([]byte, size-4)
 	read(&dataType)
+	//for i, j := 0, len(dataType)-1; i < j; i, j = i+1, j-1 {
+	//	dataType[j], dataType[i] = dataType[i], dataType[j]
+	//}
 	for index, item := range dataType {
 		dataType[index] = item - 0x33
 	}
@@ -84,10 +87,12 @@ func DecodeData(buffer *bytes.Buffer, size byte) (*ReadData, error) {
 	for i, j := 0, len(dataValue)-1; i < j; i, j = i+1, j-1 {
 		dataValue[i], dataValue[j] = dataValue[j], dataValue[i]
 	}
-	for i, j := 0, len(dataType)-1; i < j; i, j = i+1, j-1 {
-		dataType[i], dataType[j] = dataType[j], dataType[i]
-	}
-	data.rawValue = Bcd2Number(dataValue)
+
+	//瞬时功率及当前需量最高位表示方向，0正，1负，三相三线B相为0。取值范围：0.0000～79.9999。
+	//表内温度 最高位0表示零上，1表示零下。取值范围：0.0～799.9
+	//电流最高位表示方向，0正,1负,取值范围：0.000～799.999。功率因数最高位表示方向，0正，1负，取值范围
+	data.bcdValue = Bcd2Number(dataValue)
+	data.rawValue = dataValue
 	data.dataType = dataType
 	return data, nil
 }
@@ -121,8 +126,27 @@ func DecodeRead(buffer *bytes.Buffer, size int) InformationElement {
 	dataValue := make([]byte, size-4)
 	read(&dataValue)
 	read(&dataType)
+	for i, j := 0, len(dataType)-1; i < j; i, j = i+1, j-1 {
+		dataType[j], dataType[i] = dataType[i], dataType[j]
+	}
+	//瞬时功率及当前需量最高位表示方向，0正，1负，三相三线B相为0。取值范围：0.0000～79.9999。
+	//表内温度 最高位0表示零上，1表示零下。取值范围：0.0～799.9
+	//电流最高位表示方向，0正,1负,取值范围：0.000～799.999。功率因数最高位表示方向，0正，1负，取值范围
+	//判断最高位是否为0
+	if dataType[3] == 0x02 && dataType[2] >= 0x3 && dataType[2] <= 0x6 {
+		if IsStateUin8(dataValue[0], 7) {
+			data.Negative = true
+			dataValue[0] = dataValue[0] << 1 >> 1
+		}
+	}
+	if dataType[3] == 02 && dataType[2] == 0x80 && dataType[0] >= 0x4 && dataType[0] <= 0x7 {
+		if IsStateUin8(dataValue[0], 7) {
+			data.Negative = true
+			dataValue[0] = dataValue[0] << 1 >> 1
+		}
+	}
 
-	data.rawValue = Bcd2Number(dataValue)
+	data.bcdValue = Bcd2Number(dataValue)
 	data.dataType = dataType
 	return data
 }
@@ -137,4 +161,7 @@ func DecodeException(buffer *bytes.Buffer) error {
 }
 func DecodeNullData(*bytes.Buffer) InformationElement {
 	return NullData{}
+}
+func IsStateUin8(des uint8, i int) bool {
+	return (des & (0x01 << i)) != 0
 }
