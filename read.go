@@ -126,47 +126,47 @@ func (d *ReadData) GetFloat64Value() float64 {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) * 0.01
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x01 {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x01 {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) / 1000
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x02 {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x02 {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) / 100
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x03 {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x03 {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) / 10000
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x04 {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x04 {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) / 10000
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x05 {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x05 {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) / 10000
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x06 {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x06 {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) / 10000
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x07 {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x07 {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) / 10
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x08 {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x08 {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) / 100
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x09 {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x09 {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) / 100
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x0A {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x0A {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value)
 	}
-	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[1] == 0x0B {
+	if d.dataType[3] == 0x02 && d.dataType[2] == 0x80 && d.dataType[0] == 0x0B {
 		value, _ := strconv.Atoi(d.bcdValue)
 		data = float64(value) / 10000
 	}
