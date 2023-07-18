@@ -3,7 +3,7 @@ package go645
 import (
 	"time"
 
-	"github.com/goburrow/serial"
+	"github.com/tarm/serial"
 )
 
 // ClientProviderOption client provider option for user.

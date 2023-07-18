@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 	"sync/atomic"
+
+	"go.uber.org/zap"
 )
 
 // 内部调试实现.
@@ -69,4 +71,22 @@ func (sf defaultLogger) Errorf(format string, v ...interface{}) {
 // Debug Log DEBUG level message.
 func (sf defaultLogger) Debugf(format string, v ...interface{}) {
 	sf.Printf("[D]: "+format, v...)
+}
+
+// default log.
+type ZapLogger struct {
+	*zap.Logger
+}
+
+// check implement LogProvider interface.
+var _ LogProvider = (*ZapLogger)(nil)
+
+// Error Log ERROR level message.
+func (sf ZapLogger) Errorf(format string, v ...interface{}) {
+	sf.Logger.Sugar().Errorf("[E]: "+format, v...)
+}
+
+// Debug Log DEBUG level message.
+func (sf ZapLogger) Debugf(format string, v ...interface{}) {
+	sf.Logger.Sugar().Debugf("[D]: "+format, v...)
 }

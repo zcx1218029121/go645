@@ -1,8 +1,9 @@
 package go645
 
 import (
-	"github.com/goburrow/serial"
 	"time"
+
+	"github.com/tarm/serial"
 )
 
 type ClientProvider interface {

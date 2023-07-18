@@ -46,11 +46,6 @@ func (d ReadData) GetDataType() []byte {
 	return d.dataType
 }
 func (d ReadData) GetDataTypeStr() string {
-	//需要翻转
-	//var a = make([]byte, 4)
-	//for i, j := 0, len(d.dataType)-1; i < j; i, j = i+1, j-1 {
-	//	a[i], a[j] = d.dataType[i], d.dataType[j]
-	//}
 	return hex.EncodeToString(d.dataType)
 }
 func (d *ReadData) GetFloat64ValueWithTime() *ReadDataWithTime {
@@ -58,6 +53,13 @@ func (d *ReadData) GetFloat64ValueWithTime() *ReadDataWithTime {
 		_, _ = strconv.Atoi(d.bcdValue[:6])
 	}
 	return nil
+}
+func (d *ReadData) GetIntValue() (int, error) {
+	value, err := strconv.Atoi(d.bcdValue)
+	if err != nil {
+		return 0, err
+	}
+	return value,nil
 }
 func (d *ReadData) GetFloat64Value() float64 {
 	var data float64
@@ -323,7 +325,6 @@ func (d ReadData) Encode(buffer *bytes.Buffer) error {
 			return err
 		}
 	}
-
 	return nil
 }
 

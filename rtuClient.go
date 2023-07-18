@@ -2,6 +2,7 @@ package go645
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"log"
 	"time"
@@ -66,12 +67,24 @@ func (sf *RTUClientProvider) ReadRawFrame() (aduResponse []byte, err error) {
 	}
 	//拆包器重新实现
 	content := append(head, playLoad...)
+
 	sf.Debugf("rec <==[% x]", append(fe, content...))
+	var cs uint8
+	for _, v := range content[:len(content)-2] {
+		cs += v
+	}
+	if cs != content[len(content)-2] {
+		return content, errors.New("cs errors")
+	}
 	return content, nil
 }
 func (sf *RTUClientProvider) SendRawFrameAndRead(aduRequest []byte) (aduResponse []byte, err error) {
 	sf.mu.Lock()
 	defer sf.mu.Unlock()
+	err = sf.serialPort.port.Flush()
+	if err != nil {
+		return nil, err
+	}
 	if err = sf.connect(); err != nil {
 		return
 	}
@@ -112,12 +125,12 @@ func NewRTUClientProvider(opts ...ClientProviderOption) *RTUClientProvider {
 func (sf *RTUClientProvider) calculateDelay(chars int) time.Duration {
 	var characterDelay, frameDelay int // us
 
-	if sf.BaudRate <= 0 || sf.BaudRate > 19200 {
+	if sf.Baud <= 0 || sf.Baud > 19200 {
 		characterDelay = 750
 		frameDelay = 1750
 	} else {
-		characterDelay = 15000000 / sf.BaudRate
-		frameDelay = 35000000 / sf.BaudRate
+		characterDelay = 15000000 / sf.Baud
+		frameDelay = 35000000 / sf.Baud
 	}
 	return time.Duration(characterDelay*chars+frameDelay) * time.Microsecond
 }

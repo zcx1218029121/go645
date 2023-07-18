@@ -1,22 +1,21 @@
 package go645
 
 import (
-	"io"
 	"sync"
 	"time"
 
-	"github.com/goburrow/serial"
+	"github.com/tarm/serial"
 )
 
 // SerialDefaultTimeout Serial Default timeout
-const SerialDefaultTimeout = 1 * time.Second
+const SerialDefaultTimeout = 2 * time.Second
 
 // serialPort has configuration and I/O controller.
 type serialPort struct {
 	// Serial port configuration.
 	serial.Config
 	mu   sync.Mutex
-	port io.ReadWriteCloser
+	port *serial.Port
 }
 
 // Connect try to connect the remote server
@@ -30,7 +29,7 @@ func (sf *serialPort) Connect() (err error) {
 // Caller must hold the mutex before calling this method.
 func (sf *serialPort) connect() error {
 	if sf.port == nil {
-		port, err := serial.Open(&sf.Config)
+		port, err := serial.OpenPort(&sf.Config)
 		if err != nil {
 			return err
 		}
